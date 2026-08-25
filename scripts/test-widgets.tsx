@@ -113,7 +113,6 @@ const click = async (el: Element) => { await act(async () => { fireEvent.click(e
 
   ok(stat("Moves") === "0", "hanoi starts at zero moves");
   const pegA = () => btn(/^Peg A/);
-  const pegB = () => btn(/^Peg B/);
   const pegC = () => btn(/^Peg C/);
   ok(/4 discs/.test(pegA().getAttribute("aria-label") ?? ""), "peg A starts with 4 discs");
 
