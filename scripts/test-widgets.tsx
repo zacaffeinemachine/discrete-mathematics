@@ -222,11 +222,48 @@ const click = async (el: Element) => { await act(async () => { fireEvent.click(e
   ok(stat("Tiles laid") === "1", "after moving the hole, clicks lay tiles again");
   await click(btn(/^Clear$/));
 
+  // --- Undo ---------------------------------------------------------
+  // It must reach a laid tile, a moved hole, and a quartering step alike.
+  ok((btn(/^Undo$/) as HTMLButtonElement).disabled, "nothing to undo at the start");
+
+  await click(btn(/Row 3 column 3, empty/));
+  ok(stat("Tiles laid") === "1", "a tile is laid");
+  await click(btn(/^Undo$/));
+  ok(stat("Tiles laid") === "0", `undo removes the tile, got "${stat("Tiles laid")}"`);
+  ok(stat("Squares left") === "63", "and the squares come back");
+  ok((btn(/^Undo$/) as HTMLButtonElement).disabled, "history is empty again");
+
+  // Undo a hole move, back to where it was.
+  const holeAt = () => document.querySelector('button[aria-label$="the hole"]')
+    ?.getAttribute("aria-label") ?? "";
+  const originalHole = holeAt();
+  await click(btn(/move the hole/i));
+  await click(btn(/Row 2 column 2, empty/));
+  ok(holeAt() !== originalHole, "the hole moved");
+  await click(btn(/^Undo$/));
+  ok(holeAt() === originalHole, `undo puts the hole back, got "${holeAt()}"`);
+
+  // Undo several tiles in a row, newest first.
+  await click(btn(/Row 3 column 3, empty/));
+  await click(btn(/Row 5 column 5, empty/));
+  ok(stat("Tiles laid") === "2", "two tiles down");
+  await click(btn(/^Undo$/));
+  ok(stat("Tiles laid") === "1", "one undone");
+  await click(btn(/^Undo$/));
+  ok(stat("Tiles laid") === "0", "both undone");
+  await click(btn(/^Clear$/));
+
   // Switch to Delegate and quarter the board.
   await click(btn(/^Delegate$/));
   await click(btn(/quarter, and bridge/i));
   ok(stat("Tiles laid") === "1", `the bridge is one tile, got "${stat("Tiles laid")}"`);
   ok(stat("Squares left") === "60", "the bridge covers three squares");
+
+  // Undo retracts a whole quartering step, not a third of a tile.
+  await click(btn(/^Undo$/));
+  ok(stat("Tiles laid") === "0", `undo retracts the quartering, got "${stat("Tiles laid")}"`);
+  await click(btn(/quarter, and bridge/i));
+  ok(stat("Tiles laid") === "1", "and it can be redone");
 
   // Hand the rest over and let the animation run out.
   await click(btn(/hand it all to the expert/i));
@@ -235,6 +272,7 @@ const click = async (el: Element) => { await act(async () => { fireEvent.click(e
   ok(stat("Squares left") === "0", `nothing left over, got "${stat("Squares left")}"`);
   ok(!!document.body.textContent?.includes("Covered."), "it reports completion");
 
+
   // Every square except the hole is covered, and the hole never is.
   const cells = [...document.querySelectorAll('button[aria-label^="Row "]')];
   ok(cells.length === 64, `64 cells drawn, got ${cells.length}`);
@@ -242,6 +280,10 @@ const click = async (el: Element) => { await act(async () => { fireEvent.click(e
   const holes = cells.filter((c) => /the hole$/.test(c.getAttribute("aria-label") ?? "")).length;
   ok(covered === 63, `63 covered squares, got ${covered}`);
   ok(holes === 1, `exactly one hole, got ${holes}`);
+
+  // One undo reverts the entire hand-over, not 20 of its 21 tiles.
+  await click(btn(/^Undo$/));
+  ok(stat("Tiles laid") === "1", `undo reverts the whole hand-over, got "${stat("Tiles laid")}"`);
   cleanup();
 }
 

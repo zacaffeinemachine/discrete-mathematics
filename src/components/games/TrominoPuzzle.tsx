@@ -32,6 +32,7 @@ import {
 
 type Mode = "play" | "delegate";
 type Board = { r0: number; c0: number; s: number; hole: Cell };
+type Snap = { tiles: Tile[]; frontier: Board[]; hole: Cell };
 
 const MODES = [
   { key: "play" as const, label: "Play", title: "Place the tiles yourself." },
@@ -47,6 +48,13 @@ export default function TrominoPuzzle() {
   const [hover, setHover] = useState<Cell | null>(null);
   const [refused, setRefused] = useState(false);
   const [holePick, setHolePick] = useState(false);
+  /**
+   * Undo history. Whole snapshots rather than a list of inverse operations:
+   * the moves here are not all the same shape -- laying one tile, quartering
+   * every sub-board at once, moving the hole, filling the rest in -- and a
+   * board this small is cheap to copy.
+   */
+  const [history, setHistory] = useState<Snap[]>([]);
   const [frontier, setFrontier] = useState<Board[]>([]);
   const [queue, setQueue] = useState<Tile[]>([]);
 
@@ -71,6 +79,25 @@ export default function TrominoPuzzle() {
   const done = tiles.length === total;
   const started = tiles.length > 0;
 
+  /** Record the state as it stands, before changing it. */
+  const record = () => setHistory((h) => [...h, { tiles, frontier, hole }]);
+
+  const undoRef = useRef<() => void>(() => {});
+  const undo = () => {
+    if (!history.length) return;
+    const prev = history[history.length - 1];
+    setHistory((h) => h.slice(0, -1));
+    setTiles(prev.tiles);
+    setFrontier(prev.frontier);
+    setHole(prev.hole);
+    // Undoing during an animation cancels it rather than fighting it.
+    setQueue([]);
+    setHolePick(false);
+    setHover(null);
+  };
+
+  undoRef.current = undo;
+
   const reset = (nextN = n, nextHole?: Cell) => {
     setN(nextN);
     const sz = size(nextN);
@@ -81,6 +108,7 @@ export default function TrominoPuzzle() {
     setQueue([]);
     setHover(null);
     setHolePick(false);
+    setHistory([]);
   };
 
   // Animate a queued run of tiles, so "finish" reads as work being done.
@@ -98,6 +126,25 @@ export default function TrominoPuzzle() {
 
   const busy = queue.length > 0;
 
+  // Ctrl+Z / Cmd+Z, because it is what the hand reaches for. Registered on
+  // the document because the board's cells are the things being clicked and
+  // focus may be anywhere inside the widget. Ignored while typing, and the
+  // page's laser-pointer handler already bails out on a modifier key, so the
+  // two do not collide.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "z" && e.key !== "Z") return;
+      if (!(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey) return;
+      const t = e.target as HTMLElement | null;
+      const tag = t?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || t?.isContentEditable) return;
+      e.preventDefault();
+      undoRef.current();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
+
   const clickCell = (r: number, c: number) => {
     if (busy) return;
 
@@ -105,6 +152,7 @@ export default function TrominoPuzzle() {
     // click while the board was empty, which deadlocked Play mode: a tile
     // could never be laid, because laying one was what ended hole-picking.
     if (holePick) {
+      record();
       setHole({ r, c });
       setHolePick(false);
       setFrontier([]);
@@ -114,6 +162,7 @@ export default function TrominoPuzzle() {
     if (mode !== "play") return;
     const cells = orientationCells(orient, r, c);
     if (canPlace(cells, n, hole, occupied)) {
+      record();
       setTiles((t) => [...t, { cells: cells as [Cell, Cell, Cell], shade: 0 }]);
     } else {
       setRefused(true);
@@ -126,6 +175,7 @@ export default function TrominoPuzzle() {
     const boards = frontier.length ? frontier : [{ r0: 0, c0: 0, s, hole }];
     const live = boards.filter((b) => b.s > 1);
     if (!live.length) return;
+    record();
 
     const newTiles: Tile[] = [];
     const next: Board[] = [];
@@ -166,6 +216,7 @@ export default function TrominoPuzzle() {
   };
 
   const finish = () => {
+    record();
     const boards = frontier.length ? frontier : [{ r0: 0, c0: 0, s, hole }];
     const rest: Tile[] = [];
     for (const b of boards) rest.push(...solve(b.r0, b.c0, b.s, b.hole));
@@ -371,6 +422,7 @@ export default function TrominoPuzzle() {
           >
             {holePick ? "Pick a square…" : "Move the hole"}
           </Button>
+          <Button onClick={undo} disabled={!history.length} title="Undo (Ctrl+Z)">Undo</Button>
           <Button onClick={() => reset(n, hole)} disabled={!started || busy}>Clear</Button>
         </div>
       ) : (
@@ -386,6 +438,7 @@ export default function TrominoPuzzle() {
           >
             {holePick ? "Pick a square…" : "Move the hole"}
           </Button>
+          <Button onClick={undo} disabled={!history.length} title="Undo (Ctrl+Z)">Undo</Button>
           <Button onClick={() => reset(n, hole)} disabled={!started || busy}>Clear</Button>
         </div>
       )}
