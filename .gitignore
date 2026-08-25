@@ -3,7 +3,4 @@ dist/
 .astro/
 .DS_Store
 npm-debug.log*
-
-# Local-only architecture notes, as in the MathematicalThinking site.
-SITE_OVERVIEW.md
 .testbuild/

@@ -24,6 +24,21 @@ curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
 source ~/.nvm/nvm.sh && nvm install 22
 ```
 
+## The rule for puzzle apps
+
+**A puzzle app is an arena, not an answer.** It exists so a student can push the pieces
+around and form a suspicion of their own, and anything that hands over the punchline kills
+the thought it was built to provoke.
+
+So: no verdicts, no derived quantities that *are* the insight (no `2ⁿ-1` in Hanoi, no
+`(4ⁿ-1)/3` in the tromino, no inversion count in the Restless Row), nothing that reasons on
+the student's behalf, no control that decides for them by being disabled at the telling
+moment, and no "what to notice" sections. Show raw state, and counts of the student's own
+actions.
+
+`SITE_OVERVIEW.md` has the full statement, the worked examples of what was removed, and the
+two exceptions that were kept deliberately.
+
 ## Adding content
 
 **A new page in an existing chapter.** Drop an `.mdx` file into
