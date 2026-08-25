@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { PuzzleFrame, Button, Stat, Verdict, SegmentedControl } from "./ui";
 import { useAvailableWidth, useBoardSize, BoardSizeControl, fitCell } from "./boardSize";
-import Tex from "../Tex";
 import {
   type Cell,
   type Tile,
@@ -47,6 +46,7 @@ export default function TrominoPuzzle() {
   const [orient, setOrient] = useState<OrientationKey>("missing-tl");
   const [hover, setHover] = useState<Cell | null>(null);
   const [refused, setRefused] = useState(false);
+  const [holePick, setHolePick] = useState(false);
   const [frontier, setFrontier] = useState<Board[]>([]);
   const [queue, setQueue] = useState<Tile[]>([]);
 
@@ -80,6 +80,7 @@ export default function TrominoPuzzle() {
     setFrontier([]);
     setQueue([]);
     setHover(null);
+    setHolePick(false);
   };
 
   // Animate a queued run of tiles, so "finish" reads as work being done.
@@ -99,13 +100,17 @@ export default function TrominoPuzzle() {
 
   const clickCell = (r: number, c: number) => {
     if (busy) return;
-    if (!started) {
-      // Before any tile is laid, a click moves the hole -- the point being
-      // that the board tiles wherever it lands.
+
+    // Moving the hole is an explicit, armed action. It used to happen on any
+    // click while the board was empty, which deadlocked Play mode: a tile
+    // could never be laid, because laying one was what ended hole-picking.
+    if (holePick) {
       setHole({ r, c });
+      setHolePick(false);
       setFrontier([]);
       return;
     }
+
     if (mode !== "play") return;
     const cells = orientationCells(orient, r, c);
     if (canPlace(cells, n, hole, occupied)) {
@@ -173,7 +178,7 @@ export default function TrominoPuzzle() {
   const boardPx = cellPx * s;
 
   const previewCells =
-    mode === "play" && started && hover && !busy
+    mode === "play" && !holePick && hover && !busy
       ? orientationCells(orient, hover.r, hover.c)
       : [];
   const previewOk =
@@ -212,17 +217,17 @@ export default function TrominoPuzzle() {
         </>
       }
       caption={
-        started ? (
-          mode === "play" ? (
-            <>Pick a shape, then click the board. The click sets the top-left of the tile's
-              two-by-two box.</>
-          ) : (
-            <>Each dashed square is a smaller board with one square already missing — exactly
-              the problem we started with.</>
-          )
+        holePick ? (
+          <>Click the square the hole should move to. Wherever you put it, the rest can still
+            be covered.</>
+        ) : mode === "play" ? (
+          <>Pick a shape, then click the board — the click sets the top-left corner of the
+            tile's two-by-two box.</>
+        ) : started ? (
+          <>Each dashed square is a smaller board with one square already missing — exactly
+            the problem we started with.</>
         ) : (
-          <>Click any square to put the hole there. Wherever you put it, the rest can be
-            covered.</>
+          <>Quarter the board and hand each quarter to the expert.</>
         )
       }
     >
@@ -318,10 +323,6 @@ export default function TrominoPuzzle() {
 
       <div className="flex flex-wrap items-end gap-x-6 gap-y-3 mb-4">
         <Stat label="Tiles laid" value={tiles.length} tone={done ? "good" : undefined} />
-        <Stat
-          label="Tiles needed"
-          value={<Tex>{`\\tfrac{4^{${n}}-1}{3}=${total}`}</Tex>}
-        />
         <Stat label="Squares left" value={s * s - 1 - tiles.length * 3} />
       </div>
 
@@ -362,6 +363,14 @@ export default function TrominoPuzzle() {
               </span>
             </button>
           ))}
+          <Button
+            onClick={() => setHolePick((v) => !v)}
+            disabled={started || busy}
+            primary={holePick}
+            title={started ? "Clear the board first" : "Then click the square it should move to"}
+          >
+            {holePick ? "Pick a square…" : "Move the hole"}
+          </Button>
           <Button onClick={() => reset(n, hole)} disabled={!started || busy}>Clear</Button>
         </div>
       ) : (
@@ -370,23 +379,20 @@ export default function TrominoPuzzle() {
             {frontier.length ? "Quarter again" : "Quarter, and bridge"}
           </Button>
           <Button onClick={finish} disabled={done || busy}>Hand it all to the expert</Button>
+          <Button
+            onClick={() => setHolePick((v) => !v)}
+            disabled={started || busy}
+            primary={holePick}
+          >
+            {holePick ? "Pick a square…" : "Move the hole"}
+          </Button>
           <Button onClick={() => reset(n, hole)} disabled={!started || busy}>Clear</Button>
         </div>
       )}
 
       <div className="mt-3">
         {refused && <Verdict tone="bad">That tile will not fit there.</Verdict>}
-        {!refused && done && (
-          <Verdict tone="good">
-            Covered, with {total} tiles and no square left over.
-          </Verdict>
-        )}
-        {!refused && !done && mode === "delegate" && frontier.length > 0 && (
-          <Verdict tone="neutral">
-            {frontier.length} board{frontier.length === 1 ? "" : "s"} of side {frontier[0].s},
-            each missing one square.
-          </Verdict>
-        )}
+        {!refused && done && <Verdict tone="good">Covered.</Verdict>}
       </div>
     </PuzzleFrame>
   );

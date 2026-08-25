@@ -49,9 +49,14 @@
   --term: #e0ae5c;        /* amber -- a defined term, and nothing else    */
 
   /* Board and piece tokens, shared by the puzzle islands. */
-  --cell-a: #2f3039;      /* the lighter square of the checker            */
-  --cell-b: #23242c;      /* the darker square                            */
-  --cell-hole: #14151a;   /* the removed square of a deficient board      */
+  /* These have to separate from each other AND from --surface, which the
+     board sits on. The first pass put them at #2f3039 / #23242c, barely a
+     step apart and almost exactly the panel colour, and the checkerboard
+     simply did not read. Judge any replacement on a rendered board, not
+     from the swatches. */
+  --cell-a: #4a4c58;      /* the lighter square of the checker            */
+  --cell-b: #34363f;      /* the darker square                            */
+  --cell-hole: #0e0f13;   /* the removed square of a deficient board      */
   --piece: #e8e6e4;
   --legal: rgba(232, 85, 159, 0.22);   /* a square a move may land on     */
 

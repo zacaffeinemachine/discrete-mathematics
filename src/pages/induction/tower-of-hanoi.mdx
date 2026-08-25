@@ -4,8 +4,8 @@ title: Tower of Hanoi
 order: 2
 chapter: induction
 chapterTitle: Puzzles from Induction
-blurb: Move the tower, never setting a disc on a smaller one. The purest case of solving a problem by handing most of it away.
-description: A playable Tower of Hanoi, with a button that delegates the sub-tower to an expert.
+blurb: Move the tower, never setting a disc on a smaller one.
+description: A playable Tower of Hanoi, with a button that hands the sub-tower to an expert.
 ---
 
 import HanoiPuzzle from "../../components/games/HanoiPuzzle.tsx";
@@ -19,16 +19,8 @@ distinct sizes, in decreasing order of size, the largest at the bottom.
 
 <HanoiPuzzle client:visible />
 
-## What to notice
+Click a peg to lift its top disc, then click another to drop it.
 
-Try it with two discs, then three, then four, and watch what you do with your hands: you
-clear the small discs out of the way, move the big one, and bring the small ones back.
-That is the whole method, and it does not care how many "small ones" there are.
-
-**Ask the expert** does the clearing-away in one go. It becomes available exactly when the
-$n-1$ smaller discs are stacked together on a single peg — which is the only situation the
-argument ever needs. Press it, move the largest disc yourself, and press it again.
-
-The largest disc never gets in anyone's way while it sits at the bottom, because every
-other disc is smaller and may legally rest on it. That one observation is what makes the
-delegation honest.
+**Ask the expert** hands the smaller discs to somebody who already knows how to move a
+tower that size. It is not available at every moment; part of the puzzle is noticing when
+it is.

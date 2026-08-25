@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PuzzleFrame, Button, Stat, Slider, Verdict } from "./ui";
 import { useAvailableWidth, useBoardSize, BoardSizeControl, fitCell } from "./boardSize";
-import Tex from "../Tex";
 import {
   type Pegs,
   type Move,
@@ -68,7 +67,6 @@ export default function HanoiPuzzle() {
 
   const playing = queue.length > 0;
   const solved = pegs[TARGET].length === n;
-  const optimal = 2 ** n - 1;
 
   const clickPeg = (p: number) => {
     if (playing || solved) return;
@@ -195,8 +193,7 @@ export default function HanoiPuzzle() {
       </div>
 
       <div className="flex flex-wrap items-end gap-x-6 gap-y-3 mb-4">
-        <Stat label="Moves" value={moves} tone={solved && moves === optimal ? "good" : undefined} />
-        <Stat label={<>Best possible</>} value={<Tex>{`2^{${n}}-1=${optimal}`}</Tex>} />
+        <Stat label="Moves" value={moves} tone={solved ? "good" : undefined} />
         <Stat label="On peg C" value={`${pegs[TARGET].length} / ${n}`} />
       </div>
 
@@ -209,13 +206,7 @@ export default function HanoiPuzzle() {
         </Button>
         {solved && (
           <Verdict tone="good">
-            Done in {moves} move{moves === 1 ? "" : "s"}
-            {moves === optimal ? " — the fewest there are." : `; ${optimal} is the fewest there are.`}
-          </Verdict>
-        )}
-        {!solved && !canDelegate && !playing && n > 1 && (
-          <Verdict tone="neutral">
-            The expert takes over only when the {n - 1} smaller discs sit together on one peg.
+            Done in {moves} move{moves === 1 ? "" : "s"}.
           </Verdict>
         )}
         {playing && <Verdict tone="neutral">The expert is working…</Verdict>}

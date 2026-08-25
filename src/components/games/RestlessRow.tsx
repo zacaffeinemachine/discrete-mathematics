@@ -1,12 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { PuzzleFrame, Button, Stat, Verdict, SegmentedControl } from "./ui";
 import { useAvailableWidth, useBoardSize, BoardSizeControl, fitCell } from "./boardSize";
-import Tex from "../Tex";
 import {
   type MoveSet,
   type Pair,
-  inversionPairs,
-  inversions,
   isSorted,
   legalMoves,
   swap,
@@ -46,9 +43,6 @@ export default function RestlessRow() {
   const { sizeKey, factor, setSizeKey } = useBoardSize();
   const { ref, width } = useAvailableWidth<HTMLDivElement>();
 
-  const inv = inversions(row);
-  const inv0 = inversions(startRow);
-  const pairs = inversionPairs(row);
   const legal = legalMoves(row, moveSet);
   const sorted = isSorted(row);
   const stuck = legal.length === 0;
@@ -125,8 +119,6 @@ export default function RestlessRow() {
   const n = row.length;
   const tileW = fitCell(Math.round(48 * factor), n, width);
   const tileH = Math.round(tileW * 0.92);
-  const arcH = Math.min(84, Math.max(30, tileW * 1.5));
-  const cx = (i: number) => i * (tileW + 6) + tileW / 2;
   const rowW = n * tileW + (n - 1) * 6;
 
   return (
@@ -137,36 +129,10 @@ export default function RestlessRow() {
           <BoardSizeControl sizeKey={sizeKey} setSizeKey={setSizeKey} />
         </>
       }
-      caption={
-        <>
-          Click one entry and then another to swap them. Pairs the rule allows are drawn with
-          an arc; the arcs are exactly the pairs standing in the wrong order.
-        </>
-      }
+      caption={<>Click one entry and then another to swap them.</>}
     >
       <div ref={ref} className="scroll-x mb-4">
         <div style={{ width: rowW, minWidth: rowW, margin: "0 auto" }}>
-          {/* Inversion arcs. One arc per out-of-order pair -- so the count
-              below is not an assertion, it is what is drawn. */}
-          <svg width={rowW} height={arcH} style={{ display: "block", overflow: "visible" }} aria-hidden="true">
-            {pairs.map((p) => {
-              const x1 = cx(p.i);
-              const x2 = cx(p.j);
-              const span = p.j - p.i;
-              const h = arcH - (span / Math.max(1, n - 1)) * (arcH - 12);
-              const live = isLegalPair(p.i, p.j);
-              return (
-                <path
-                  key={`${p.i}-${p.j}`}
-                  d={`M ${x1} ${arcH} Q ${(x1 + x2) / 2} ${h - 6} ${x2} ${arcH}`}
-                  fill="none"
-                  stroke={live ? "var(--accent)" : "var(--faint)"}
-                  strokeWidth={live ? 2 : 1.2}
-                  opacity={live ? 0.95 : 0.5}
-                />
-              );
-            })}
-          </svg>
 
           <div className="flex gap-[6px]" style={{ marginTop: 2 }}>
             {row.map((v, i) => {
@@ -201,13 +167,7 @@ export default function RestlessRow() {
       </div>
 
       <div className="flex flex-wrap items-end gap-x-6 gap-y-3 mb-4">
-        <Stat
-          label={<>Inversions <Tex>I</Tex></>}
-          value={inv}
-          tone={inv === 0 ? "good" : "accent"}
-        />
-        <Stat label="Moves made" value={moves} />
-        <Stat label={<>At the start <Tex>I_0</Tex></>} value={inv0} />
+        <Stat label="Moves made" value={moves} tone={sorted ? "good" : undefined} />
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -222,17 +182,9 @@ export default function RestlessRow() {
 
       <div className="mt-3">
         {refused && <Verdict tone="bad">That pair is not one the rule allows.</Verdict>}
-        {!refused && sorted && moveSet !== "any" && (
+        {!refused && sorted && stuck && (
           <Verdict tone="good">
-            Sorted, and no move is left. {moveSet === "adjacent"
-              ? `It took ${moves} move${moves === 1 ? "" : "s"} — and every run from this row takes exactly ${inv0}, whichever swaps are chosen.`
-              : `It took ${moves} move${moves === 1 ? "" : "s"}; under this rule two runs need not agree.`}
-          </Verdict>
-        )}
-        {!refused && !sorted && moveSet === "any" && moves > 12 && (
-          <Verdict tone="neutral">
-            Under this rule a swap can put the row back out of order, so <Tex>I</Tex> may rise —
-            and the run need never stop.
+            In order, and no move is left. It took {moves} move{moves === 1 ? "" : "s"}.
           </Verdict>
         )}
       </div>

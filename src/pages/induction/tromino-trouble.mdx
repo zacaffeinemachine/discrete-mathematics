@@ -4,7 +4,7 @@ title: Tromino Trouble
 order: 3
 chapter: induction
 chapterTitle: Puzzles from Induction
-blurb: A board of side a power of two, one square missing, and L-shaped tiles. Put the hole wherever you like — it still works.
+blurb: A board of side a power of two, one square missing, and L-shaped tiles.
 description: Tile a deficient board with L-trominoes, by hand or by quartering.
 ---
 
@@ -17,21 +17,10 @@ an L-shaped tile made of three unit squares.
 > For every $n \geq 1$, a $2^n \times 2^n$ grid with one unit square removed can be covered
 > by L-trominoes with no overlaps and no gaps.
 
-The hole is not a blemish on the problem; it is what makes the problem possible. A tile
-covers three squares, so a board can only be covered when its square count is divisible by
-three — and $4^n$ never is, while $4^n - 1$ always is.
-
 <TrominoPuzzle client:visible />
 
-## What to notice
+In **Play**, pick a shape and click the board to lay a tile. **Move the hole** puts the
+missing square somewhere else, on a clear board.
 
-Play first, on the $4 \times 4$ board. Then switch to **Delegate** and watch what the
-quartering does.
-
-Cut the board into four quadrants. The hole is in one of them. Now lay a single tile across
-the three inner corners of the *other* three quadrants — and look at what you have: four
-boards of half the side, each missing exactly one square. Each of them is the problem you
-started with. Press **Quarter again** to do the same thing to all four at once, and again,
-until there is nothing left to cut.
-
-Move the hole before you start. The quartering never needed to know where it was.
+**Delegate** cuts the board up instead of tiling it. Try the small boards first, and move
+the hole around before you decide what the cutting is doing.

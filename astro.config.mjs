@@ -25,6 +25,11 @@ export default defineConfig({
   site: "https://zacaffeinemachine.github.io",
   base: "/discrete-mathematics",
   integrations: [mdx(), react()],
+  // The dev toolbar is fixed to the bottom centre of the viewport, which is
+  // exactly where the puzzle boards sit -- it covers the tromino grid and the
+  // Restless Row tiles and swallows clicks on them. It is worth more to be
+  // able to use the puzzles in dev than to have the toolbar.
+  devToolbar: { enabled: false },
   markdown: { processor },
   vite: { plugins: [tailwindcss()] },
 });
