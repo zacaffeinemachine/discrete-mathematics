@@ -1,0 +1,122 @@
+---
+import Base from "./Base.astro";
+import { isPageVisible } from "../config/visibility";
+
+/**
+ * Layout for a single content page.
+ *
+ * GOTCHA, recorded in the MathematicalThinking site's overview and worth
+ * repeating: an MDX page's frontmatter arrives as `Astro.props.frontmatter`,
+ * NOT as top-level `Astro.props`. Reading the latter yields undefined for
+ * everything and the page renders with no title and no navigation.
+ */
+const { title, chapter, chapterTitle, description } =
+  Astro.props.frontmatter ?? Astro.props;
+
+const base = import.meta.env.BASE_URL;
+
+// Every page in this chapter, discovered rather than listed, ordered by the
+// `order` field in its frontmatter and filtered through the release gate.
+const allPages = import.meta.glob("../pages/**/*.mdx", { eager: true }) as Record<
+  string,
+  { frontmatter?: { title?: string; order?: number } }
+>;
+
+const siblings = Object.entries(allPages)
+  .filter(([path]) => path.includes(`/pages/${chapter}/`))
+  .map(([path, mod]) => ({
+    slug: path.split(`/pages/${chapter}/`)[1].replace(/\.mdx$/, ""),
+    title: mod.frontmatter?.title ?? "",
+    order: mod.frontmatter?.order ?? 0,
+  }))
+  .filter((s) => isPageVisible(chapter, s.slug))
+  .sort((a, b) => a.order - b.order);
+
+// Identify the current page by its slug rather than by `order`: two pages
+// with a duplicated `order` would otherwise both match the wrong entry.
+const currentSlug = Astro.url.pathname.replace(/\/$/, "").split("/").pop() ?? "";
+
+// A page is shown when the release gate lists it. `siblings` is already
+// filtered by that gate, so membership in it IS the visibility test.
+const currentIdx = siblings.findIndex((s) => s.slug === currentSlug);
+const visible = currentIdx >= 0;
+const prev = currentIdx > 0 ? siblings[currentIdx - 1] : null;
+const next =
+  currentIdx >= 0 && currentIdx < siblings.length - 1 ? siblings[currentIdx + 1] : null;
+---
+
+<Base title={`${title} — ${chapterTitle}`} description={description}>
+  {
+    !visible ? (
+      <div class="text-center py-24">
+        <h1 class="display text-3xl font-bold tracking-tight mb-3">Not yet released</h1>
+        <p class="text-[var(--muted)]">
+          This page isn't available yet. Check back later, or
+          <a href={base + "/"} class="underline ml-1" style="color: var(--accent)">
+            return to the home page
+          </a>.
+        </p>
+      </div>
+    ) : (
+      <>
+        <nav class="chapter-nav text-sm mb-8" aria-label="Breadcrumb">
+          <a href={base + "/"}>Chapters</a>
+          <span class="mx-2 text-[var(--faint)]">·</span>
+          <a href={`${base}/${chapter}/`}>{chapterTitle}</a>
+          <span class="mx-2 text-[var(--faint)]">·</span>
+          <span class="text-[var(--ink)]">{title}</span>
+        </nav>
+
+        {siblings.length > 1 && (
+          <aside class="mb-10 p-4 rounded-lg border border-[var(--rule)] bg-[var(--surface)]">
+            <div class="text-xs uppercase tracking-wider text-[var(--muted)] mb-2">
+              In this chapter
+            </div>
+            <ol class="space-y-1 text-sm">
+              {siblings.map((s, i) => (
+                <li class="flex gap-3">
+                  <span class="text-[var(--muted)] tabular-nums text-xs pt-0.5">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  {s.slug === currentSlug ? (
+                    <span class="font-medium" style="color: var(--accent)" aria-current="page">
+                      {s.title}
+                    </span>
+                  ) : (
+                    <a href={`${base}/${chapter}/${s.slug}`} class="hover:text-[var(--ink)] text-[var(--muted)]">
+                      {s.title}
+                    </a>
+                  )}
+                </li>
+              ))}
+            </ol>
+          </aside>
+        )}
+
+        <article class="prose">
+          <h1>{title}</h1>
+          <slot />
+        </article>
+
+        <nav class="chapter-nav mt-16 pt-6 border-t border-[var(--rule)] flex justify-between gap-6 text-sm">
+          <div>
+            {prev && (
+              <a href={`${base}/${chapter}/${prev.slug}`} class="block">
+                <div class="text-xs uppercase tracking-wider text-[var(--faint)] mb-1">Previous</div>
+                {prev.title}
+              </a>
+            )}
+          </div>
+          <div class="text-right">
+            {next && (
+              <a href={`${base}/${chapter}/${next.slug}`} class="block">
+                <div class="text-xs uppercase tracking-wider text-[var(--faint)] mb-1">Next</div>
+                {next.title}
+              </a>
+            )}
+          </div>
+        </nav>
+      </>
+    )
+  }
+</Base>

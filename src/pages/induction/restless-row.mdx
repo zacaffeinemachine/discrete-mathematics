@@ -1,0 +1,43 @@
+---
+layout: ../../layouts/Chapter.astro
+title: The Restless Row
+order: 4
+chapter: induction
+chapterTitle: Puzzles from Induction
+blurb: Swap neighbours that are out of order. Nothing gets smaller, yet the swapping has to stop — and always after the same number of moves.
+description: Watch the inversion count fall by exactly one per swap, under three different rules.
+---
+
+import RestlessRow from "../../components/games/RestlessRow.tsx";
+
+A row of $n$ distinct numbers is written on a board. A move picks two entries standing next
+to each other whose order is wrong, meaning that the left one is larger than the right one,
+and swaps them. Nobody tells us which such pair to pick, and at a given moment there may be
+several.
+
+> Show that the swapping stops after finitely many moves, whatever the choices are, and
+> that the row is in increasing order when no move is left.
+
+Here nothing shrinks. The row keeps its $n$ entries from beginning to end, so there is no
+smaller version of the problem to point at. Something else has to do the descending.
+
+<RestlessRow client:visible />
+
+## What to notice
+
+Call a pair of positions $i < j$ an **inversion** when $a_i > a_j$ — the two entries are in
+the wrong order, whether or not they are neighbours. The arcs above the row are exactly
+these pairs, and $I$ counts them.
+
+Now make a move and watch $I$. It goes down by one. Not by two, not sometimes by none: by
+exactly one, every time, because swapping two neighbours changes the standing of that one
+pair and of no other. A count of arcs cannot fall by one for ever.
+
+Then run the same row twice, choosing differently each time. Both runs take $I_0$ moves.
+The choices never mattered.
+
+The other two rules are worth a minute each. Allow *any* out-of-order pair to swap and $I$
+still falls, but it can fall by more than one, so two runs need not agree. Allow neighbours
+to swap whether or not they are out of order and $I$ can climb — press **Run at random**
+and leave it going. It has finitely many rows to visit and it still never settles, which is
+worth remembering the next time an argument claims that finitely many states force a stop.

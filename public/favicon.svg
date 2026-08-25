@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <rect width="100" height="100" rx="18" fill="#1B1D23"/>
+  <g fill="none" stroke="#E8559F" stroke-width="3.6" stroke-linecap="round" transform="translate(50 50) scale(0.84) translate(-50 -50)">
+    <path d="M 50.00 8.00 L 89.94 37.02 M 89.94 37.02 L 74.69 83.98 M 74.69 83.98 L 25.31 83.98 M 25.31 83.98 L 10.06 37.02 M 10.06 37.02 L 50.00 8.00 M 50.00 8.00 L 50.00 32.00 M 89.94 37.02 L 67.12 44.44 M 74.69 83.98 L 60.58 64.56 M 25.31 83.98 L 39.42 64.56 M 10.06 37.02 L 32.88 44.44 M 50.00 32.00 L 60.58 64.56 M 67.12 44.44 L 39.42 64.56 M 60.58 64.56 L 32.88 44.44 M 39.42 64.56 L 50.00 32.00 M 32.88 44.44 L 67.12 44.44"/>
+  </g>
+  <g fill="#E8559F" transform="translate(50 50) scale(0.84) translate(-50 -50)">
+  <circle cx="50.00" cy="8.00" r="6.5" fill="#E8559F" stroke="none" />
+  <circle cx="89.94" cy="37.02" r="6.5" fill="#E8559F" stroke="none" />
+  <circle cx="74.69" cy="83.98" r="6.5" fill="#E8559F" stroke="none" />
+  <circle cx="25.31" cy="83.98" r="6.5" fill="#E8559F" stroke="none" />
+  <circle cx="10.06" cy="37.02" r="6.5" fill="#E8559F" stroke="none" />
+  <circle cx="50.00" cy="32.00" r="6.5" fill="#E8559F" stroke="none" />
+  <circle cx="67.12" cy="44.44" r="6.5" fill="#E8559F" stroke="none" />
+  <circle cx="60.58" cy="64.56" r="6.5" fill="#E8559F" stroke="none" />
+  <circle cx="39.42" cy="64.56" r="6.5" fill="#E8559F" stroke="none" />
+  <circle cx="32.88" cy="44.44" r="6.5" fill="#E8559F" stroke="none" />
+  </g>
+</svg>

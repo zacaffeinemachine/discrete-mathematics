@@ -1,0 +1,39 @@
+---
+layout: ../../layouts/Chapter.astro
+title: Tigers and Sheep
+order: 1
+chapter: induction
+chapterTitle: Puzzles from Induction
+blurb: Ninety-nine tigers, one sheep, and a rule that turns the diner into dinner. The answer is a parity.
+description: A playable version of the tigers-and-sheep puzzle from the induction text.
+---
+
+import TigersAndSheep from "../../components/games/TigersAndSheep.tsx";
+
+On a magic island there live some tigers and one sheep. A tiger can go hungry for ever,
+and it would still rather eat the sheep than not. The island is magic, though, and a tiger
+that eats the sheep **turns into a sheep itself**. Sheep are content with grass and eat
+nothing else.
+
+There are $99$ tigers and one sheep. Is the sheep eaten?
+
+## The rules we are granted
+
+1. Every tiger is perfectly rational, every tiger knows that every other tiger is
+   perfectly rational, every tiger knows that every tiger knows this, and so on.
+2. A tiger values its own life above everything else. Among the outcomes in which it
+   survives, it prefers the one in which it has eaten.
+3. A tiger that eats the sheep becomes a sheep at that moment, and is then in exactly the
+   position the eaten sheep was in.
+4. No two tigers eat at the same moment.
+
+<TigersAndSheep client:visible />
+
+## What to notice
+
+A tiger deciding whether to eat is not really asking about its own island. It is asking
+what happens on an island with one fewer tiger — because that is the island it will wake
+up on, as the sheep. So the answer for $n$ tigers is settled entirely by the answer for
+$n-1$, and the panel above spells that out at every step.
+
+Slide the count up and down. The verdict alternates, and it never stops alternating.

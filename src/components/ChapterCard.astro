@@ -1,0 +1,20 @@
+---
+interface Props {
+  href: string;
+  index: number;
+  title: string;
+  blurb: string;
+}
+const { href, index, title, blurb } = Astro.props;
+---
+
+<a
+  href={href}
+  class="block p-5 rounded-lg border border-[var(--rule)] bg-[var(--surface)] hover:border-[var(--accent)] transition-colors"
+>
+  <div class="text-xs uppercase tracking-wider text-[var(--muted)] mb-1 tabular-nums">
+    Chapter {String(index).padStart(2, "0")}
+  </div>
+  <div class="display font-bold text-lg mb-1.5">{title}</div>
+  <p class="text-sm text-[var(--muted)] leading-relaxed">{blurb}</p>
+</a>

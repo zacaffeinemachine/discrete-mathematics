@@ -1,0 +1,45 @@
+---
+/**
+ * The course emblem: the Petersen graph.
+ *
+ * Three drawings, one graph -- the book's worked illustration of the
+ * morphism lens, and of Poincare's "the art of giving the same name to
+ * different things". Drawn here in its standard form: an outer pentagon,
+ * an inner pentagram, and five spokes joining them.
+ *
+ * `currentColor` throughout, so it takes the colour of whatever it sits
+ * in and needs no theme handling of its own. `public/favicon.svg` carries
+ * the same figure at a fixed rose, since a favicon has no currentColor.
+ */
+interface Props {
+  width?: string | number;
+  class?: string;
+}
+const { width = 40, class: className = "" } = Astro.props;
+---
+
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 100 100"
+  width={width}
+  height={width}
+  class={className}
+  fill="none"
+  stroke="currentColor"
+  stroke-width="3.2"
+  stroke-linecap="round"
+  aria-hidden="true"
+  role="presentation"
+>
+  <path d="M 50.00 8.00 L 89.94 37.02 M 89.94 37.02 L 74.69 83.98 M 74.69 83.98 L 25.31 83.98 M 25.31 83.98 L 10.06 37.02 M 10.06 37.02 L 50.00 8.00 M 50.00 8.00 L 50.00 32.00 M 89.94 37.02 L 67.12 44.44 M 74.69 83.98 L 60.58 64.56 M 25.31 83.98 L 39.42 64.56 M 10.06 37.02 L 32.88 44.44 M 50.00 32.00 L 60.58 64.56 M 67.12 44.44 L 39.42 64.56 M 60.58 64.56 L 32.88 44.44 M 39.42 64.56 L 50.00 32.00 M 32.88 44.44 L 67.12 44.44" />
+  <circle cx="50.00" cy="8.00" r="6.5" fill="currentColor" stroke="none" />
+  <circle cx="89.94" cy="37.02" r="6.5" fill="currentColor" stroke="none" />
+  <circle cx="74.69" cy="83.98" r="6.5" fill="currentColor" stroke="none" />
+  <circle cx="25.31" cy="83.98" r="6.5" fill="currentColor" stroke="none" />
+  <circle cx="10.06" cy="37.02" r="6.5" fill="currentColor" stroke="none" />
+  <circle cx="50.00" cy="32.00" r="6.5" fill="currentColor" stroke="none" />
+  <circle cx="67.12" cy="44.44" r="6.5" fill="currentColor" stroke="none" />
+  <circle cx="60.58" cy="64.56" r="6.5" fill="currentColor" stroke="none" />
+  <circle cx="39.42" cy="64.56" r="6.5" fill="currentColor" stroke="none" />
+  <circle cx="32.88" cy="44.44" r="6.5" fill="currentColor" stroke="none" />
+</svg>

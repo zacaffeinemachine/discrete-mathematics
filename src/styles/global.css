@@ -1,0 +1,192 @@
+@import "tailwindcss";
+@import "katex/dist/katex.min.css";
+@import "@fontsource/lato/400.css";
+@import "@fontsource/lato/700.css";
+
+/* =====================================================================
+   Obsidian and rose.
+
+   The palette is the course's own, defined for the slide decks in
+   `Slides/AESTHETIC.md`, so the site, the decks and the book read as one
+   course. Names follow that file: paper -> --bg, ink -> --ink, grey1 ->
+   --muted, panel -> --surface, accent -> the rose, term -> the amber.
+
+   DARK IS THE DEFAULT here, unlike most sites, because the palette was
+   built dark-first. The light theme is the *book's* identity -- printed
+   black on white -- so the two themes are "the deck" and "the page".
+
+   Two rules carried over from AESTHETIC.md, both easy to break quietly:
+
+   1. NEVER MIX A TOKEN TOWARDS WHITE. On a charcoal canvas, mixing
+      towards white lightens the very mark you meant to soften. Mix
+      towards --bg instead. (In LaTeX this was the `grey2!25` trap.)
+
+   2. TERMS AND HEADINGS DO NOT SHARE A COLOUR. --term (amber) names a
+      new word; --accent (rose) is structural. When a term wore the
+      accent it read as furniture rather than as content.
+   ===================================================================== */
+
+:root,
+:root[data-theme="dark"] {
+  --bg: #1b1d23;          /* charcoal -- `paper` in AESTHETIC.md          */
+  --surface: #292a33;     /* `panel`, defined as a lift off the canvas    */
+  --ink: #e8e6e4;         /* chalk                                        */
+  --muted: #97918e;       /* `grey1` -- subtitles, kickers, secondary     */
+  --faint: #575250;       /* `grey2` -- ghosted marks, footline           */
+  --rule: #3e3a3e;        /* hairlines                                    */
+
+  /* The rose, in two strengths. #B70170 is the brand colour and it is
+     what large display type and solid fills use. But on charcoal it is
+     only ~2.6:1 -- below the 4.5:1 body-text threshold and below even
+     the 3:1 large-text one. So anything body-sized (links, the current
+     TOC entry, focus rings, hover borders) uses the lifted rose at
+     ~5.0:1. This is the same move the MathematicalThinking site makes
+     with its red, #b91c1c lifted to #f87171 in dark mode. */
+  --accent: #e8559f;
+  --accent-deep: #b70170;
+  --accent-soft: rgba(232, 85, 159, 0.16);
+
+  --term: #e0ae5c;        /* amber -- a defined term, and nothing else    */
+
+  /* Board and piece tokens, shared by the puzzle islands. */
+  --cell-a: #2f3039;      /* the lighter square of the checker            */
+  --cell-b: #23242c;      /* the darker square                            */
+  --cell-hole: #14151a;   /* the removed square of a deficient board      */
+  --piece: #e8e6e4;
+  --legal: rgba(232, 85, 159, 0.22);   /* a square a move may land on     */
+
+  /* Five tromino fills. Greedy-coloured so neighbouring tiles differ,
+     matching `ind-tromino-tiled.pdf` in the Induction book. */
+  --tile-1: #b70170;
+  --tile-2: #6d4d8f;
+  --tile-3: #2f6f7d;
+  --tile-4: #8a6a2f;
+  --tile-5: #7a3050;
+
+  --good: #6fbf8f;        /* an invariant holding, a puzzle solved        */
+  --bad: #e08a7a;         /* a refused move                               */
+}
+
+:root[data-theme="light"] {
+  --bg: #fafaf8;
+  --surface: #ffffff;
+  --ink: #1b1d23;
+  --muted: #6b6663;
+  --faint: #97918e;
+  --rule: #e4e1de;
+
+  /* On white the brand rose is ~6.4:1, so no lift is needed and the
+     light theme simply wears the real colour. */
+  --accent: #b70170;
+  --accent-deep: #b70170;
+  --accent-soft: rgba(183, 1, 112, 0.10);
+
+  --term: #9a6b12;        /* amber darkened to carry on white            */
+
+  --cell-a: #f0eeea;
+  --cell-b: #ddd8d1;
+  --cell-hole: #b9b2a9;
+  --piece: #1b1d23;
+  --legal: rgba(183, 1, 112, 0.16);
+
+  --tile-1: #d4498f;
+  --tile-2: #8f6fae;
+  --tile-3: #4f8f9d;
+  --tile-4: #b08a45;
+  --tile-5: #a55575;
+
+  --good: #1b7a3d;
+  --bad: #9b1c1c;
+}
+
+html {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+/* Lato is the decks' display face and it is used here in exactly the same
+   two roles: the wordmark and headings. Prose stays in the system sans. */
+.display,
+.prose h1,
+.prose h2,
+.prose h3 {
+  font-family: Lato, ui-sans-serif, system-ui, sans-serif;
+}
+
+.prose {
+  max-width: 68ch;
+  line-height: 1.7;
+  font-size: 1.02rem;
+}
+.prose h1 { font-size: 1.9rem; margin: 0 0 1rem; font-weight: 700; letter-spacing: -0.02em; }
+.prose h2 { font-size: 1.25rem; margin: 2.5rem 0 0.5rem; font-weight: 700; letter-spacing: -0.01em; }
+.prose h3 { font-size: 1.05rem; margin: 2rem 0 0.4rem; font-weight: 700; }
+.prose p { margin: 1rem 0; }
+.prose ul, .prose ol { margin: 1rem 0; padding-left: 1.4rem; }
+.prose ul { list-style: disc; }
+.prose ol { list-style: decimal; }
+.prose li { margin: 0.35rem 0; }
+.prose a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.prose strong { font-weight: 700; }
+.prose code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.92em;
+  padding: 0.1em 0.3em;
+  background: var(--accent-soft);
+  border-radius: 3px;
+}
+.prose blockquote {
+  margin: 1.25rem 0;
+  padding: 0.1rem 0 0.1rem 1rem;
+  border-left: 3px solid var(--rule);
+  color: var(--muted);
+}
+
+/* A defined term. Amber, never the accent -- see the header note. */
+.term { color: var(--term); font-weight: 700; }
+
+/* The wrapper every puzzle island sits in. The MathematicalThinking site
+   uses `not-prose` here, which ships with @tailwindcss/typography -- a
+   package it does not install, so the class is silently a no-op there.
+   This is a real class instead. */
+.widget {
+  margin: 2.5rem 0;
+  max-width: 100%;
+}
+.widget :where(p, h1, h2, h3, ul, ol) { margin: 0; }
+
+/* Wide content scrolls inside its own box; the page body never does. */
+.scroll-x { overflow-x: auto; max-width: 100%; }
+
+.chapter-nav a { color: var(--muted); transition: color 120ms; }
+.chapter-nav a:hover { color: var(--ink); }
+
+:root[data-theme="light"] .theme-icon-dark { display: none; }
+:root[data-theme="dark"] .theme-icon-light { display: none; }
+:root:not([data-theme="light"]) .theme-icon-light { display: none; }
+
+/* KaTeX inherits the body colour, which is already themed, so it needs no
+   dark-mode override. It does need to scroll rather than widen the page. */
+.katex-display { overflow-x: auto; overflow-y: hidden; padding: 0.2em 0; }
+
+button:focus-visible,
+a:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
