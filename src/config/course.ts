@@ -2,11 +2,15 @@
 //  The course, the teaching team, the office, and the booking link.
 // -----------------------------------------------------------------------
 //
-//  The MathematicalThinking site keeps the same block and warns that it
-//  duplicates macros in that course's slide preamble. Check whether this
-//  project's `Slides/` preamble grows the same macros (\instructorname,
-//  \ohroom, \ohurl, ...); if it does, the two files become the only two
-//  places any of this is written down and both must be edited together.
+//  THIS DUPLICATES `Slides/slides-preamble.tex`, which sets the same
+//  people as \tfone, \taone and \tatwo for the deck title footer, and
+//  the room and booking link as \ohroom and \ohurl. Those are the only
+//  two places any of this is written down, and both must be edited
+//  together.
+//
+//  THE ASSISTANTS ARE IN ALPHABETICAL ORDER and nothing else -- no
+//  seniority, no section allocation, nothing a student could read as a
+//  ranking. The preamble carries the same rule.
 // -----------------------------------------------------------------------
 
 export const COURSE_NAME = "Discrete Mathematics";
@@ -16,9 +20,12 @@ export const COURSE_TAGLINE =
 
 export const INSTRUCTOR = "Abhishek Khetan";
 
-export const TEACHING_FELLOWS: readonly string[] = [];
+export const TEACHING_FELLOWS: readonly string[] = ["Anirban Bhattacharjee"];
 
-export const TEACHING_ASSISTANTS: readonly string[] = [];
+export const TEACHING_ASSISTANTS: readonly string[] = [
+  "Akhilesh Balaji",
+  "Mannan Gupta",
+];
 
 /** Room number of the instructor's office. */
 export const OFFICE = "AC04-703";
