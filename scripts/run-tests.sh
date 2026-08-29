@@ -6,7 +6,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 status=0
-for f in hanoi restless tromino; do
+for f in boggle hanoi restless tromino; do
   node --experimental-strip-types "scripts/test-$f.ts" || status=1
 done
 

@@ -1,0 +1,37 @@
+---
+layout: ../../layouts/Chapter.astro
+title: Ball Boggle
+order: 2
+chapter: induction
+chapterTitle: Puzzles from Induction
+blurb: Bins of balls, and a move that feeds every bin but one.
+description: A playable version of the ball-boggle puzzle from the induction text.
+---
+
+import BallBoggle from "../../components/games/BallBoggle.tsx";
+
+We are given $n$ bins. Each bin holds some number of balls, and the starting counts are
+arbitrary.
+
+At each step we may pick any $n-1$ of the bins and add exactly one ball to each of them.
+This is the only move available. Put another way, each move picks one bin to **spare**
+and adds a ball to all the others.
+
+No move adds a ball to a single bin on its own. Every move touches all but one of the
+bins, so the counts cannot be adjusted one at a time.
+
+Whatever the starting counts, can we reach a state in which every bin holds the same
+number of balls?
+
+## The rules
+
+1. There are $n$ bins. The number of balls in each of them at the start is arbitrary.
+2. A move picks exactly $n-1$ of the bins and adds one ball to each. Equivalently, it
+   picks one bin to spare and feeds the rest.
+3. That is the only move. No ball is ever removed, and no bin is ever emptied.
+4. The bins are level when every one of them holds the same number of balls.
+
+<BallBoggle client:visible />
+
+Under *Delegate* you keep one bin for yourself and hand the rest to the expert. Which
+bin you keep is your own choice.

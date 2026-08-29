@@ -38,6 +38,7 @@ const { act } = await import("react");
 const React = (await import("react")).default;
 
 const TigersAndSheep = (await import("../src/components/games/TigersAndSheep.tsx")).default;
+const BallBoggle = (await import("../src/components/games/BallBoggle.tsx")).default;
 const HanoiPuzzle = (await import("../src/components/games/HanoiPuzzle.tsx")).default;
 const RestlessRow = (await import("../src/components/games/RestlessRow.tsx")).default;
 const TrominoPuzzle = (await import("../src/components/games/TrominoPuzzle.tsx")).default;
@@ -119,6 +120,71 @@ const click = async (el: Element) => { await act(async () => { fireEvent.click(e
   await click(tigerBtns()[0]);
   await settle(() => stat("Tigers") === "3", 5000);
   ok(stat("Tigers") === "3", "a second meal works too");
+  cleanup();
+}
+
+// ------------------------------------------------------------ Ball Boggle
+{
+  await act(async () => { render(React.createElement(BallBoggle)); });
+
+  const readBins = () =>
+    [...document.querySelectorAll('button[aria-label^="Bin "]')].map((b) =>
+      Number((b.getAttribute("aria-label") ?? "").match(/(\d+) ball/)?.[1] ?? -1));
+
+  ok(readBins().join(",") === "2,1,3", `the book's start is 2,1,3, got "${readBins()}"`);
+  ok(stat("Moves made") === "0", "no moves yet");
+
+  // THE NUMBER OF MOVES NEEDED IS THE ANSWER TO AN EXERCISE and must not
+  // be shown, nor which bin to spare, nor which bin to keep.
+  const text = () => (document.body.textContent ?? "").toLowerCase();
+  for (const leak of ["fewest", "minimum", "moves needed", "moves left", "remaining", "fullest"]) {
+    ok(!text().includes(leak), `widget must not say "${leak}"`);
+  }
+  ok(stat("Moves needed") === "" && stat("Fewest moves") === "", "no move count is displayed");
+
+  // A move feeds every bin but the one clicked.
+  await click(btn(/^Bin 1,/));
+  ok(readBins().join(",") === "2,2,4", `sparing B1 gives 2,2,4, got "${readBins()}"`);
+  ok(stat("Moves made") === "1", `one move counted, got "${stat("Moves made")}"`);
+
+  // Undo, back to the start.
+  await click(btn(/^Undo$/));
+  ok(readBins().join(",") === "2,1,3", `undo restores 2,1,3, got "${readBins()}"`);
+  ok(stat("Moves made") === "0", "and the counter with it");
+  ok((btn(/^Undo$/) as HTMLButtonElement).disabled, "nothing left to undo");
+
+  // --- Delegate ------------------------------------------------------
+  await click(btn(/^Delegate$/));
+  // Every bin may be kept as the star. Choosing badly is the student's to
+  // discover, so no bin is disabled and none is marked as the right one.
+  const binBtns = () => [...document.querySelectorAll('button[aria-label^="Bin "]')];
+  ok(binBtns().every((b) => !(b as HTMLButtonElement).disabled),
+     "every bin may be chosen as the star");
+
+  await click(btn(/^Bin 3,/));
+  ok(!!btn(/^Bin 3,.*the star bin$/), "the third bin is now the star");
+
+  await click(btn(/hand the others to the expert/i));
+  await settle(() => stat("Moves made") === "1");
+  ok(readBins().join(",") === "2,2,4",
+     `the expert levels B1 and B2 and feeds the star, got "${readBins()}"`);
+
+  // The star is ahead, never behind, so sparing it closes the gap.
+  await click(btn(/^Bin 3,/));
+  ok(readBins().join(",") === "3,3,4", `got "${readBins()}"`);
+  await click(btn(/^Bin 3,/));
+  ok(readBins().join(",") === "4,4,4", `got "${readBins()}"`);
+  ok((document.body.textContent ?? "").includes("Level."), "it reports that the bins are level");
+
+  // One undo retracts the whole hand-over, not its last move.
+  await click(btn(/^Reset$/));
+  ok(readBins().join(",") === "2,1,3", "reset returns to the start");
+  await click(btn(/^Bin 3,/));
+  await click(btn(/hand the others to the expert/i));
+  await settle(() => stat("Moves made") === "1");
+  await click(btn(/^Undo$/));
+  ok(readBins().join(",") === "2,1,3", `undo retracts the delegation, got "${readBins()}"`);
+  ok(stat("Moves made") === "0", "and its moves");
   cleanup();
 }
 

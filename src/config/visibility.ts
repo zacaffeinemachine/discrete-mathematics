@@ -22,6 +22,7 @@ export const VISIBLE_CHAPTERS: readonly string[] = [
 
 export const VISIBLE_PAGES: readonly string[] = [
   "induction/tigers-and-sheep",
+  "induction/ball-boggle",
   "induction/tower-of-hanoi",
   "induction/tromino-trouble",
   "induction/restless-row",
