@@ -44,10 +44,27 @@ the `allChapters` array on the home page, because its order and blurbs are edito
 - **Puzzle rules live in `models/` with no React in them**, so they can be tested directly.
   The component holds only state and rendering.
 
+## The front page
+
+Shaped after the MathematicalThinking home page (August 2026): the emblem sits beside the
+title rather than above it, drawn in `--ink` so it reads as a mark and not as a link, and
+the chapter cards follow with no "Chapters" heading over them. Then the teaching team, then
+office hours in a bordered card.
+
+Two things are deliberately absent.
+
+- **Nothing sits under the course title.** The subtitle and the paragraph that used to be
+  there both described what the course covers, and the syllabus is not settled. Put a line
+  back only when there is one that will still be true in a year.
+- **The Induction chapter card carries no number.** `ChapterCard`'s `index` prop is optional
+  and the home page omits it. The in-chapter contents still numbers the puzzles 01–05, which
+  is ordering within a chapter and is a different thing.
+
 ## The palette
 
-`Slides/AESTHETIC.md` in the parent project is the source of truth; `src/styles/global.css`
-implements it. Two rules from that file carry real weight here:
+`Slides/AESTHETIC.md` in the parent project is the source of truth for everything except the
+accent; `src/styles/global.css` implements it. Two rules from that file carry real weight
+here:
 
 1. **Never mix a token towards white.** On a charcoal canvas that lightens the mark you
    meant to soften. Mix towards `--bg`.
@@ -59,18 +76,27 @@ dark-first for a lecture hall; the light theme is the book's printed identity. T
 bootstrap script in `Base.astro` falls back to dark, and `:root` with no `data-theme`
 carries the dark values.
 
-**The accent exists at two strengths, and this is not decoration.** `#B70170` is the brand
-rose and sits at about 2.6:1 on the charcoal canvas — below the 4.5:1 needed for body text
-and below even the 3:1 large-text threshold. AESTHETIC.md already notes it is "on the dark
-side of comfortable". So:
+**The site's accent is azure, and the decks' is not.** This is the one deliberate
+divergence from AESTHETIC.md, taken at the author's call in August 2026: the brand rose
+`#B70170` read as aggressive at screen sizes, and it sat at about 2.6:1 on the charcoal
+canvas — below the 4.5:1 needed for body text and below even the 3:1 large-text threshold.
+AESTHETIC.md already conceded it was "on the dark side of comfortable". The azure chosen is
+`coolmark` from that same file, so the site is still inside the course's palette rather than
+wearing an invented colour. The decks and the book keep the rose.
 
-- `--accent` (`#E8559F`, about 5.0:1) carries anything body-sized: links, the current
-  contents entry, focus rings, hover borders.
-- `--accent-deep` (`#B70170`) carries large display type, solid fills, and the emblem.
+**The accent exists at two strengths, and this is not decoration.**
 
-In the light theme both are `#B70170`, which is about 6.4:1 on off-white. Amber `#E0AE5C`
-is about 8.4:1 on charcoal and needs no lift. If the accent is ever changed, re-check those
-three numbers before anything else.
+- `--accent` (`#8FBEEA`, about 8.6:1 on charcoal) carries anything body-sized: links, the
+  current contents entry, focus rings, hover borders.
+- `--accent-deep` (`#5E9DD0`, about 5.8:1) carries large display type and solid fills.
+
+In the light theme both are `#1F6FB2`, about 5.1:1 on off-white. Amber `#E0AE5C` is about
+8.4:1 on charcoal and needs no lift. If the accent is ever changed, re-check those three
+numbers before anything else.
+
+One thing was left rose: `--tile-1`, the first of the five tromino fills, which is `#B70170`
+because the five were greedy-coloured to match `ind-tromino-tiled.pdf` in the Induction book.
+Changing it would put the widget out of step with the figure it copies.
 
 ## KaTeX
 
@@ -139,6 +165,7 @@ script also says to speak of **the expert**, never of recursion — so the Hanoi
 | Puzzle | Chapter | What the student can do |
 |---|---|---|
 | Tigers and Sheep | 1 | Set the island size; click any tiger to make it eat and watch it become the sheep. |
+| Ball Boggle | 2 | Click a bin to spare it and feed all the others. Under *Delegate*, keep one bin as the star and hand the rest to the expert. |
 | Tower of Hanoi | 3 | Move discs; *Ask the expert* transfers the sub-tower as one act. |
 | Tromino Trouble | 4 | Lay tiles by hand, move the hole, or quarter the board a level at a time. Undo steps back through any of it. |
 | The Restless Row | 6 | Swap under three different rules and count their own moves. |
@@ -153,8 +180,12 @@ which clamps a board to the prose column. Its storage key is `dm-board-size`.
 
 ## Tests
 
-`npm test` runs four suites (`scripts/`):
+`npm test` runs five suites (`scripts/`):
 
+- **ball boggle** — the plan levels 600 random configurations of 2 to 7 bins; the chapter's
+  own claim, that a star chosen as a fullest bin ends up level with or ahead of the rest
+  after the expert finishes, checked over 600 more; that an *emptiest* star finishes behind,
+  which is why the choice matters; and that no plan is shorter than the minimum.
 - **hanoi** — the move list is legal and of length `2ⁿ-1` for n ≤ 10; the two-stage
   delegation is offered, aims correctly, and finishes; scattered discs offer no delegation.
 - **tromino** — exhaustive for n ≤ 3, i.e. every one of the 84 hole positions: 84 boards
@@ -200,7 +231,7 @@ and swallowed clicks on them, which read as "none of the buttons work".
 
 ## Not yet built
 
-The other eleven puzzles in the induction text — Ball Boggle, the Water War, Block Bungle,
-burnt pancakes, handshake parity, Ducci, the fuel-can lap, pile splitting, and the rest —
-and any page for the Discrete Mathematics book's own chapters. Handshake parity is the
-other chapter with no figure in the book, so it is the next most valuable one to build.
+The other ten puzzles in the induction text — the Water War, Block Bungle, burnt pancakes,
+handshake parity, Ducci, the fuel-can lap, pile splitting, and the rest — and any page for
+the Discrete Mathematics book's own chapters. Handshake parity is the other chapter with no
+figure in the book, so it is the next most valuable one to build.

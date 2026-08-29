@@ -5,7 +5,6 @@ import ChapterCard from "../components/ChapterCard.astro";
 import { isChapterVisible } from "../config/visibility";
 import {
   COURSE_NAME,
-  COURSE_SUBTITLE,
   INSTRUCTOR,
   TEACHING_FELLOWS,
   TEACHING_ASSISTANTS,
@@ -22,95 +21,119 @@ const allChapters = [
     slug: "induction",
     title: "Puzzles from Induction",
     blurb:
-      "Four puzzles you can play. Each one is solved in the book by hunting the smallest case that goes wrong — here you can push the pieces around first.",
+      "Five puzzles you can play. Each one is solved in the book by hunting the smallest case that goes wrong — here you can push the pieces around first.",
   },
 ];
 
 const chapters = allChapters.filter((c) => isChapterVisible(c.slug));
-const hasTeam = TEACHING_FELLOWS.length > 0 || TEACHING_ASSISTANTS.length > 0;
+
+// Only groups that have anyone in them. Discrete Mathematics currently has
+// no fellows and no assistants, and three columns with two of them empty
+// reads as a mistake.
+const team = [
+  { role: "Instructor", people: [INSTRUCTOR] },
+  { role: "Teaching Fellows", people: TEACHING_FELLOWS },
+  { role: "Teaching Assistants", people: TEACHING_ASSISTANTS },
+].filter((g) => g.people.length > 0);
 ---
 
 <Base
   title={COURSE_NAME}
   description="Interactive puzzles and course material for an undergraduate course in discrete mathematics."
 >
-  <section class="text-center pt-4 pb-14">
-    <div style="color: var(--accent-deep)" class="flex justify-center mb-6">
-      <Petersen width="104" />
+  {/*
+    The emblem sits beside the title rather than above it, as on the
+    MathematicalThinking site, and is drawn in ink rather than in the
+    accent so it reads as a mark and not as a link.
+
+    NOTHING GOES UNDER THE TITLE. The subtitle and the paragraph that used
+    to sit here both described what the course covers, and the syllabus is
+    not settled. (Author decision, August 2026.) Put a line back only when
+    there is one that will still be true in a year.
+  */}
+  <section class="mb-16 flex flex-wrap items-center gap-x-10 gap-y-6">
+    <div class="shrink-0 text-[var(--ink)] opacity-90">
+      <Petersen width="112" />
     </div>
-    <h1 class="display text-4xl font-bold tracking-tight mb-3">{COURSE_NAME}</h1>
-    <p class="text-[var(--muted)] max-w-xl mx-auto leading-relaxed">
-      {COURSE_SUBTITLE}. The puzzles below are the ones the companion text on induction
-      is built from — play with them before you read the proofs, and the proofs will
-      read like something you already suspected.
-    </p>
+    <div class="min-w-[18rem] flex-1">
+      <h1 class="display text-4xl font-bold tracking-tight">{COURSE_NAME}</h1>
+    </div>
   </section>
 
-  <section class="mb-16">
-    <h2 class="text-xs uppercase tracking-wider text-[var(--muted)] mb-3">Chapters</h2>
-    <div class="grid sm:grid-cols-2 gap-4">
+  <section class="grid gap-4 md:grid-cols-2">
+    {
+      chapters.map((c) => (
+        <ChapterCard href={`${base}/${c.slug}/`} title={c.title} blurb={c.blurb} />
+      ))
+    }
+  </section>
+  {
+    chapters.length === 0 && (
+      <p class="text-[var(--muted)] text-sm">Nothing has been released yet.</p>
+    )
+  }
+
+  <section class="mt-20">
+    <h2 class="display text-2xl font-bold tracking-tight mb-2">The teaching team</h2>
+    <p class="text-[var(--muted)] mb-8 max-w-[52ch] leading-relaxed">
+      Any of us will happily talk mathematics with you. Ask in class, catch us
+      afterwards, or come to the office.
+    </p>
+
+    <div class="grid gap-8 sm:grid-cols-3">
       {
-        chapters.map((c, i) => (
-          <ChapterCard
-            href={`${base}/${c.slug}/`}
-            index={i + 1}
-            title={c.title}
-            blurb={c.blurb}
-          />
+        team.map((group) => (
+          <div>
+            <div class="text-xs uppercase tracking-wider text-[var(--muted)] mb-3 pb-2 border-b border-[var(--rule)]">
+              {group.role}
+            </div>
+            <ul class="space-y-1.5">
+              {group.people.map((name) => (
+                <li class="text-[0.98rem] leading-snug">{name}</li>
+              ))}
+            </ul>
+          </div>
         ))
       }
     </div>
-    {
-      chapters.length === 0 && (
-        <p class="text-[var(--muted)] text-sm">Nothing has been released yet.</p>
-      )
-    }
   </section>
 
-  <section class="grid sm:grid-cols-2 gap-8 mb-4">
-    <div>
-      <h2 class="text-xs uppercase tracking-wider text-[var(--muted)] mb-3">Instructor</h2>
-      <p class="font-medium">{INSTRUCTOR}</p>
-      {
-        hasTeam && (
-          <>
-            {TEACHING_FELLOWS.length > 0 && (
-              <>
-                <h3 class="text-xs uppercase tracking-wider text-[var(--muted)] mt-4 mb-1.5">
-                  Teaching fellows
-                </h3>
-                <ul class="text-sm space-y-0.5">
-                  {TEACHING_FELLOWS.map((p) => <li>{p}</li>)}
-                </ul>
-              </>
-            )}
-            {TEACHING_ASSISTANTS.length > 0 && (
-              <>
-                <h3 class="text-xs uppercase tracking-wider text-[var(--muted)] mt-4 mb-1.5">
-                  Teaching assistants
-                </h3>
-                <ul class="text-sm space-y-0.5">
-                  {TEACHING_ASSISTANTS.map((p) => <li>{p}</li>)}
-                </ul>
-              </>
-            )}
-          </>
-        )
-      }
-    </div>
+  {/*
+    Office hours. WALKING IN IS THE ORDINARY WAY TO COME, and the copy says
+    so before it says anything about the calendar. Booking is a convenience
+    that guarantees the instructor is in the room at the chosen hour. It is
+    not a condition of being let in, and the button must never be the only
+    thing under the invitation.
 
-    <div>
-      <h2 class="text-xs uppercase tracking-wider text-[var(--muted)] mb-3">Office hours</h2>
-      <div class="p-4 rounded-lg border border-[var(--rule)] bg-[var(--surface)] text-sm leading-relaxed">
-        <p class="mb-2">
-          My office is <span class="tabular-nums font-medium">{OFFICE}</span>. Walking in is
-          the ordinary way to come — you do not need an appointment.
-        </p>
-        <p class="text-[var(--muted)]">
-          If you would rather be sure I am there,
-          <a href={BOOKING_URL} style="color: var(--accent)" class="underline">book a slot</a>;
-          that only guarantees I am in the room at the time you pick.
-        </p>
+    THIS BLOCK SPEAKS IN THE FIRST PERSON, and it is the only one on the
+    site that does. The instructor's name is in the team block just above,
+    so nothing is lost by not repeating it. Do not "fix" it to the third
+    person.
+  */}
+  <section class="mt-14 rounded-lg border border-[var(--rule)] bg-[var(--surface)] p-6 sm:p-8">
+    <h2 class="display text-xl font-bold tracking-tight mb-2">Office hours</h2>
+    <p class="text-[var(--muted)] mb-6 max-w-[56ch] leading-relaxed">
+      You are always welcome in my office — just walk in. Bring a question, half a
+      question, or a page you could not follow. None of it is too small to bring.
+    </p>
+
+    <div class="flex flex-wrap items-end gap-x-10 gap-y-5">
+      <div>
+        <div class="text-xs uppercase tracking-wider text-[var(--muted)] mb-1">Office</div>
+        <div class="text-lg font-medium tracking-tight tabular-nums">{OFFICE}</div>
+      </div>
+      <div>
+        <a
+          href={BOOKING_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-block px-4 py-2 rounded border border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--accent-soft)] transition-colors text-sm font-medium"
+        >
+          Book a slot →
+        </a>
+        <div class="text-xs text-[var(--muted)] mt-2 max-w-[34ch] leading-relaxed">
+          Optional. Booking only makes sure I am in the room at the time you pick.
+        </div>
       </div>
     </div>
   </section>

@@ -170,7 +170,7 @@ const base = import.meta.env.BASE_URL;
           for (var i = 1; i < points.length; i++) {
             var p0 = points[i - 1], p1 = points[i];
             var alpha = Math.max(0, 1 - (now - p1.t) / FADE_MS);
-            ctx.strokeStyle = "rgba(232, 85, 159, " + (alpha * 0.75).toFixed(3) + ")";
+            ctx.strokeStyle = "rgba(143, 190, 234, " + (alpha * 0.75).toFixed(3) + ")";
             ctx.lineWidth = 2 + alpha * 6;
             ctx.lineCap = "round";
             ctx.beginPath();
@@ -181,8 +181,8 @@ const base = import.meta.env.BASE_URL;
           if (lastX >= 0) {
             var grad = ctx.createRadialGradient(lastX, lastY, 0, lastX, lastY, 22);
             grad.addColorStop(0, "rgba(240, 120, 180, 0.95)");
-            grad.addColorStop(0.35, "rgba(232, 85, 159, 0.45)");
-            grad.addColorStop(1, "rgba(232, 85, 159, 0)");
+            grad.addColorStop(0.35, "rgba(143, 190, 234, 0.45)");
+            grad.addColorStop(1, "rgba(143, 190, 234, 0)");
             ctx.fillStyle = grad;
             ctx.beginPath();
             ctx.arc(lastX, lastY, 22, 0, Math.PI * 2);

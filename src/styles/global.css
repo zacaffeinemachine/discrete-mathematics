@@ -4,12 +4,18 @@
 @import "@fontsource/lato/700.css";
 
 /* =====================================================================
-   Obsidian and rose.
+   Obsidian and azure.
 
    The palette is the course's own, defined for the slide decks in
-   `Slides/AESTHETIC.md`, so the site, the decks and the book read as one
-   course. Names follow that file: paper -> --bg, ink -> --ink, grey1 ->
-   --muted, panel -> --surface, accent -> the rose, term -> the amber.
+   `Slides/AESTHETIC.md`. Names follow that file: paper -> --bg, ink ->
+   --ink, grey1 -> --muted, panel -> --surface, term -> the amber.
+
+   ONE DELIBERATE DIVERGENCE. The decks' `accent` is the rose #B70170.
+   The site wears the azure that AESTHETIC.md lists as `coolmark`
+   instead, at the author's call (August 2026): the rose read as
+   aggressive at screen sizes, and its deep strength cleared only 2.6:1
+   on charcoal. The decks and the book keep the rose. If the two are ever
+   brought back together, this is the file that moved.
 
    DARK IS THE DEFAULT here, unlike most sites, because the palette was
    built dark-first. The light theme is the *book's* identity -- printed
@@ -35,16 +41,15 @@
   --faint: #575250;       /* `grey2` -- ghosted marks, footline           */
   --rule: #3e3a3e;        /* hairlines                                    */
 
-  /* The rose, in two strengths. #B70170 is the brand colour and it is
-     what large display type and solid fills use. But on charcoal it is
-     only ~2.6:1 -- below the 4.5:1 body-text threshold and below even
-     the 3:1 large-text one. So anything body-sized (links, the current
-     TOC entry, focus rings, hover borders) uses the lifted rose at
-     ~5.0:1. This is the same move the MathematicalThinking site makes
-     with its red, #b91c1c lifted to #f87171 in dark mode. */
-  --accent: #e8559f;
-  --accent-deep: #b70170;
-  --accent-soft: rgba(232, 85, 159, 0.16);
+  /* The azure, in two strengths, keeping the structure the rose had.
+     --accent carries anything body-sized: links, the current TOC entry,
+     focus rings, hover borders. --accent-deep carries large display
+     type, solid fills and the emblem. Both clear the thresholds on
+     charcoal with room to spare -- 8.6:1 and 5.8:1 -- which the rose did
+     not. Re-check both numbers before changing either. */
+  --accent: #8fbeea;
+  --accent-deep: #5e9dd0;
+  --accent-soft: rgba(143, 190, 234, 0.16);
 
   --term: #e0ae5c;        /* amber -- a defined term, and nothing else    */
 
@@ -58,7 +63,7 @@
   --cell-b: #34363f;      /* the darker square                            */
   --cell-hole: #0e0f13;   /* the removed square of a deficient board      */
   --piece: #e8e6e4;
-  --legal: rgba(232, 85, 159, 0.22);   /* a square a move may land on     */
+  --legal: rgba(143, 190, 234, 0.22);  /* a square a move may land on     */
 
   /* Five tromino fills. Greedy-coloured so neighbouring tiles differ,
      matching `ind-tromino-tiled.pdf` in the Induction book. */
@@ -80,11 +85,11 @@
   --faint: #97918e;
   --rule: #e4e1de;
 
-  /* On white the brand rose is ~6.4:1, so no lift is needed and the
-     light theme simply wears the real colour. */
-  --accent: #b70170;
-  --accent-deep: #b70170;
-  --accent-soft: rgba(183, 1, 112, 0.10);
+  /* On off-white the azure needs deepening rather than lifting. #1F6FB2
+     is ~5.1:1 there, so both strengths can be the one colour. */
+  --accent: #1f6fb2;
+  --accent-deep: #1f6fb2;
+  --accent-soft: rgba(31, 111, 178, 0.10);
 
   --term: #9a6b12;        /* amber darkened to carry on white            */
 
@@ -92,7 +97,7 @@
   --cell-b: #ddd8d1;
   --cell-hole: #b9b2a9;
   --piece: #1b1d23;
-  --legal: rgba(183, 1, 112, 0.16);
+  --legal: rgba(31, 111, 178, 0.16);
 
   --tile-1: #d4498f;
   --tile-2: #8f6fae;
