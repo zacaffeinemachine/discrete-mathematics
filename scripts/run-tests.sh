@@ -10,6 +10,13 @@ for f in boggle hanoi restless tromino; do
   node --experimental-strip-types "scripts/test-$f.ts" || status=1
 done
 
+# The Automata chapter's machine builder: every problem's language, its
+# smallest machine, the check, and every <Tests> string on every page.
+# Ported from the MathematicalThinking site; takes about two and a half
+# minutes, almost all of it the suffix sweeps over 26 letters.
+node --experimental-strip-types --no-warnings=ExperimentalWarning --test \
+  --test-reporter=dot scripts/test-machines.ts || status=1
+
 mkdir -p .testbuild
 ./node_modules/.bin/esbuild scripts/test-widgets.tsx \
   --bundle --platform=node --format=esm --jsx=automatic \

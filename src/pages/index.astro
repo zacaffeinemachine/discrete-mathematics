@@ -23,6 +23,12 @@ const allChapters = [
     blurb:
       "Five puzzles you can play. Each one is solved in the book by hunting the smallest case that goes wrong — here you can push the pieces around first.",
   },
+  {
+    slug: "automata",
+    title: "Automata",
+    blurb:
+      "A few circles, a few arrows, a tape of symbols. Ten pages of problems, by theme: design a machine that accepts exactly the strings asked for, then draw it and check it on the page.",
+  },
 ];
 
 const chapters = allChapters.filter((c) => isChapterVisible(c.slug));

@@ -75,6 +75,33 @@
 
   --good: #6fbf8f;        /* an invariant holding, a puzzle solved        */
   --bad: #e08a7a;         /* a refused move                               */
+
+  /* Machines (the Automata chapter), ported with the components from the
+     MathematicalThinking site, whose dark values these are. Accept is a
+     blue and reject a red, so the pair stays legible to a red-green
+     colour-blind reader. --fsm-sym-a/-b colour the wires on Do These
+     Agree?; the builder canvas is neutral (edge, lit, select), and its
+     colour-coded view uses sym0, sym1 and c2 to c5. --mcq-* are the
+     builder's verdict boxes. */
+  --fsm-accept: #5cadf5;
+  --fsm-accept-soft: rgba(92, 173, 245, 0.18);
+  --fsm-reject: #dc7070;
+  --fsm-reject-soft: rgba(220, 112, 112, 0.16);
+  --fsm-sym-a: #2dd4bf;
+  --fsm-sym-b: #a78bfa;
+  --fsm-edge: #a1a1aa;
+  --fsm-lit: #3f414c;
+  --fsm-select: rgba(232, 230, 228, 0.10);
+  --fsm-sym0: #6aa6e6;
+  --fsm-sym1: #f0954a;
+  --fsm-c2: #b48ae6;
+  --fsm-c3: #5cc08a;
+  --fsm-c4: #ec7bb0;
+  --fsm-c5: #c9a874;
+  --mcq-right: #56b37f;
+  --mcq-right-soft: rgba(86, 179, 127, 0.20);
+  --mcq-wrong: #dc7070;
+  --mcq-wrong-soft: rgba(220, 112, 112, 0.18);
 }
 
 :root[data-theme="light"] {
@@ -107,6 +134,26 @@
 
   --good: #1b7a3d;
   --bad: #9b1c1c;
+
+  --fsm-accept: #0b6bbd;
+  --fsm-accept-soft: rgba(11, 107, 189, 0.12);
+  --fsm-reject: #9b1c1c;
+  --fsm-reject-soft: rgba(155, 28, 28, 0.10);
+  --fsm-sym-a: #0f766e;
+  --fsm-sym-b: #6d28d9;
+  --fsm-edge: #52525b;
+  --fsm-lit: #e4e4e7;
+  --fsm-select: rgba(24, 24, 27, 0.08);
+  --fsm-sym0: #2563a8;
+  --fsm-sym1: #d9730d;
+  --fsm-c2: #7b4fb0;
+  --fsm-c3: #2e8b57;
+  --fsm-c4: #c2387a;
+  --fsm-c5: #8a6d3b;
+  --mcq-right: #1b7a3d;
+  --mcq-right-soft: rgba(27, 122, 61, 0.13);
+  --mcq-wrong: #9b1c1c;
+  --mcq-wrong-soft: rgba(155, 28, 28, 0.12);
 }
 
 html {

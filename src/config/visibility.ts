@@ -18,6 +18,7 @@
 
 export const VISIBLE_CHAPTERS: readonly string[] = [
   "induction",
+  "automata",
 ];
 
 export const VISIBLE_PAGES: readonly string[] = [
@@ -26,6 +27,19 @@ export const VISIBLE_PAGES: readonly string[] = [
   "induction/tower-of-hanoi",
   "induction/tromino-trouble",
   "induction/restless-row",
+
+  // Automata: design problems ported from the MathematicalThinking site's
+  // Machines chapter (its pages 2 to 11). No solutions anywhere.
+  "automata/ends-and-beginnings",
+  "automata/counting",
+  "automata/length",
+  "automata/somewhere-inside",
+  "automata/looking-back",
+  "automata/exact-words",
+  "automata/numbers",
+  "automata/two-conditions",
+  "automata/same-language",
+  "automata/deep-end",
 ];
 
 export function isChapterVisible(slug: string): boolean {

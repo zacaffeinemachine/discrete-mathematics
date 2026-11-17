@@ -1,0 +1,80 @@
+---
+import Base from "../../layouts/Base.astro";
+import { isChapterVisible, isPageVisible } from "../../config/visibility";
+
+const chapter = "automata";
+const chapterTitle = "Automata";
+const base = import.meta.env.BASE_URL;
+
+const pages = import.meta.glob("./*.mdx", { eager: true }) as Record<
+  string,
+  { frontmatter?: { title?: string; order?: number; blurb?: string } }
+>;
+
+const subpages = Object.entries(pages)
+  .map(([path, mod]) => ({
+    slug: path.replace(/^\.\//, "").replace(/\.mdx$/, ""),
+    title: mod.frontmatter?.title ?? "",
+    order: mod.frontmatter?.order ?? 0,
+    blurb: mod.frontmatter?.blurb ?? "",
+  }))
+  .filter((p) => isPageVisible(chapter, p.slug))
+  .sort((a, b) => a.order - b.order);
+
+const released = isChapterVisible(chapter);
+---
+
+<Base
+  title={chapterTitle}
+  description="Design problems on finite automata, each with a canvas to build the machine and check it."
+>
+  {
+    !released ? (
+      <div class="text-center py-24">
+        <h1 class="display text-3xl font-bold tracking-tight mb-3">Not yet released</h1>
+        <p class="text-[var(--muted)]">
+          This chapter isn't available yet. Check back later, or
+          <a href={base + "/"} class="underline ml-1" style="color: var(--accent)">
+            return to the home page
+          </a>.
+        </p>
+      </div>
+    ) : (
+      <>
+        <nav class="chapter-nav text-sm mb-8" aria-label="Breadcrumb">
+          <a href={base + "/"}>Chapters</a>
+          <span class="mx-2 text-[var(--faint)]">·</span>
+          <span class="text-[var(--ink)]">{chapterTitle}</span>
+        </nav>
+
+        <h1 class="display text-3xl font-bold tracking-tight mb-3">{chapterTitle}</h1>
+        <p class="text-[var(--muted)] max-w-2xl leading-relaxed mb-10">
+          Every page is a set of <em>design problems</em> on one theme. Each problem
+          asks for a machine that accepts exactly the strings it describes, and has a
+          canvas under it on which you can draw your machine, run it on any string, and
+          check it. One page, <em>Do These Agree?</em>, gives you two machines instead
+          and asks whether they accept the same strings.
+        </p>
+
+        <ol class="space-y-3">
+          {subpages.map((p, i) => (
+            <li>
+              <a
+                href={`${base}/${chapter}/${p.slug}`}
+                class="flex gap-4 p-4 rounded-lg border border-[var(--rule)] bg-[var(--surface)] hover:border-[var(--accent)] transition-colors"
+              >
+                <span class="text-[var(--muted)] tabular-nums text-sm pt-0.5">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <span>
+                  <span class="display font-bold block mb-1">{p.title}</span>
+                  <span class="text-sm text-[var(--muted)] leading-relaxed">{p.blurb}</span>
+                </span>
+              </a>
+            </li>
+          ))}
+        </ol>
+      </>
+    )
+  }
+</Base>

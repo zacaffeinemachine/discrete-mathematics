@@ -229,6 +229,37 @@ Disabled in `astro.config.mjs`. It is fixed to the bottom centre of the viewport
 exactly where the puzzle boards sit: it covered the tromino grid and the Restless Row tiles
 and swallowed clicks on them, which read as "none of the buttons work".
 
+## The Automata chapter (ported Nov 2026)
+
+`src/pages/automata/` is pages 2 to 11 of the MathematicalThinking site's **Machines**
+chapter, copied in November 2026: the design-problem pages with a machine builder under
+every problem, and *Do These Agree?*. Its page 1 (what a machine is) and page 12 (*Beyond
+Reach*) were left out at the author's call. The architecture, the no-solutions rule and
+the builder's behaviour are documented in that site's `SITE_OVERVIEW.md` under *The
+Machines pattern* and *The Machines problem pages*. Read those before changing anything
+here.
+
+What changed in the port:
+
+- Components live in `src/components/games/fsm/` (only what the ten pages import, so
+  not `machines.ts`, whose solution machines no page may use). The builder's
+  `usePersistent` and button kit, which live under `circuits/problems/` there, are in
+  `src/components/games/shared/` here.
+- Work is saved under `dm.automata.v1:<page>:<id>` rather than `qrmt.machines.v1`, since
+  both sites are served from the same GitHub Pages origin.
+- `exact-words` problem 3 accepts `hate` and `math` (the original's second word was
+  the other course's name), and the odd-part example on `somewhere-inside` changed to
+  match. The same page's problem 9 now says `other`, not `x`, for "any other letter",
+  as the overview there says every statement should.
+- The `--fsm-*` and `--mcq-*` tokens were added to `global.css`, with the original's
+  dark values in the (default) dark theme.
+- `scripts/test-machines.ts` is the original's `machine-builder.test.ts` with the page
+  paths changed. It runs inside `npm test` and takes about two and a half minutes.
+
+Unlike the induction widgets, the builder's *Check* gives a verdict on the student's own
+machine. That checks the student's work and does not hand over an answer, so it is not
+taken to break the arena rule above.
+
 ## Not yet built
 
 The other ten puzzles in the induction text — the Water War, Block Bungle, burnt pancakes,
