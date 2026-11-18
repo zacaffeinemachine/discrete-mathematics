@@ -20,6 +20,8 @@
 //                                 other arrow leaving the same state reads
 //
 // Below the canvas a tape runs any string through the machine as it stands.
+// An azure orb sits in the live state; on each step it runs along the arrow
+// taken, so a step round a loop, which changes nothing else, is still seen.
 // Check decides exactly whether the machine accepts the strings the problem
 // asks for (engine.ts) and on a wrong machine loads the shortest string it
 // gets wrong onto the tape. The look is deliberately neutral: ink and greys,
@@ -27,7 +29,7 @@
 //
 // Work is saved in localStorage under dm.automata.v1:<page>:<id>.
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { usePersistent } from "../../shared/storage";
 import { AuthorError, Button, Row, Status } from "../../shared/ui";
 import { OTHER, compare, missingArrows, parseConvention, parseLabel, runMachine, specFromEdges, targetOf, type DrawnEdge } from "./engine";
@@ -58,6 +60,14 @@ const WORLD = 4000;                      // states stay within this many units o
 const PALETTE = ["var(--fsm-sym0)", "var(--fsm-sym1)", "var(--fsm-c2)", "var(--fsm-c3)", "var(--fsm-c4)", "var(--fsm-c5)"];
 const MAX_CONVENTIONS = 8;
 const STORE = "dm.automata.v1";
+// The orb that marks the live state. On a step it shrinks to ORB_RUN, runs
+// along the arrow just taken and grows back in the next state, all in ORB_MS:
+// well inside one Play tick (600 ms), so Play never queues animations.
+const ORB_REST = 15;
+const ORB_RUN = 9;
+const ORB_MS = 380;
+const reducedMotion = () =>
+  typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
 export interface MachineBuilderProps {
   id?: string;           // unique on the page; defaults to the language key
@@ -514,9 +524,59 @@ export default function MachineBuilder(props: MachineBuilderProps) {
   useEffect(() => {
     if (!playing) return;
     if (pos >= word.length) { setPlaying(false); return; }
-    const t = setTimeout(() => setPos((p) => p + 1), 600);
+    const t = setTimeout(() => { stepTo.current = pos + 1; setPos(pos + 1); }, 600);
     return () => clearTimeout(t);
   }, [playing, pos, word]);
+
+  // ---- the orb ----
+  // A single step forward (Step, a Play tick, or a click on the next square of
+  // the tape) sets stepTo to the position it moves to; only then does the orb
+  // run. Every other move of pos (Start, Back, a jump, a new word) just puts it
+  // in the live state. A layout effect, so the first frame of the run is drawn
+  // before the browser paints the new position: no flash of the orb at the end.
+  const stepTo = useRef<number | null>(null);
+  const [orbRun, setOrbRun] = useState<{ x: number; y: number; r: number; from: string } | null>(null);
+  useLayoutEffect(() => {
+    const want = stepTo.current;
+    stepTo.current = null;
+    if (want !== pos || pos === 0 || (walk.stuckAt !== null && pos > walk.stuckAt)) return;
+    const from = walk.path[pos - 1], to = walk.path[pos];
+    const k = design.edges.findIndex((e, i) => e.from === from && e.to === to && (built.expanded[i] ?? []).includes(word[pos - 1]));
+    const arrow = drawing.find((a) => a.index === k);
+    const P = from ? stateById.get(from) : undefined, Q = to ? stateById.get(to) : undefined;
+    if (!arrow || !P || !Q || !from || reducedMotion()) return;
+    // The route: out of the centre of P, along the arrow, into the centre of Q,
+    // measured by arc length so the orb moves at an even pace.
+    const pts: Pt[] = [P, ...arrow.samples, Q];
+    const cum = [0];
+    for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y));
+    const total = cum[cum.length - 1] || 1;
+    const at = (t: number) => {
+      const e = t < 0.5 ? 2 * t * t : 1 - 2 * (1 - t) * (1 - t);         // ease in and out
+      const s = e * total;
+      let i = 1;
+      while (i < pts.length - 1 && cum[i] < s) i++;
+      const f = (s - cum[i - 1]) / (cum[i] - cum[i - 1] || 1);
+      const grow = Math.min(1, Math.min(t, 1 - t) / 0.2);               // 0 at either end, 1 on the wire
+      return {
+        x: pts[i - 1].x + (pts[i].x - pts[i - 1].x) * f,
+        y: pts[i - 1].y + (pts[i].y - pts[i - 1].y) * f,
+        r: ORB_REST - (ORB_REST - ORB_RUN) * grow,
+        from,
+      };
+    };
+    setOrbRun(at(0));
+    const t0 = performance.now();
+    let raf = 0;
+    const frame = (now: number) => {
+      const t = (now - t0) / ORB_MS;
+      if (t >= 1) { setOrbRun(null); return; }
+      setOrbRun(at(t));
+      raf = requestAnimationFrame(frame);
+    };
+    raf = requestAnimationFrame(frame);
+    return () => { cancelAnimationFrame(raf); setOrbRun(null); };
+  }, [pos, word]);
 
   // ---- check ----
   const check = () => {
@@ -615,6 +675,7 @@ export default function MachineBuilder(props: MachineBuilderProps) {
 
   const nameSize = (n: string) => (n.length <= 2 ? 15 : n.length <= 4 ? 13 : 11);
   const gridId = `mgrid-${id.replace(/[^\w-]/g, "_")}`;
+  const orbId = `morb-${id.replace(/[^\w-]/g, "_")}`;
 
   // ---- drawing ----
   return (
@@ -702,6 +763,16 @@ export default function MachineBuilder(props: MachineBuilderProps) {
             <pattern id={gridId} width={20} height={20} patternUnits="userSpaceOnUse">
               <circle cx={10} cy={10} r={0.9} fill="var(--rule)" />
             </pattern>
+            {/* The orb: azure, the site accent. Translucent at rest, so the
+                state's name stays legible on top of it in either theme. */}
+            <radialGradient id={`${orbId}-rest`} cx="40%" cy="38%" r="65%">
+              <stop offset="0%" style={{ stopColor: "var(--accent)", stopOpacity: 0.75 }} />
+              <stop offset="100%" style={{ stopColor: "var(--accent-deep)", stopOpacity: 0.35 }} />
+            </radialGradient>
+            <radialGradient id={`${orbId}-run`} cx="40%" cy="38%" r="65%">
+              <stop offset="0%" style={{ stopColor: "var(--accent)", stopOpacity: 1 }} />
+              <stop offset="100%" style={{ stopColor: "var(--accent-deep)", stopOpacity: 0.85 }} />
+            </radialGradient>
           </defs>
           <rect x={vbX} y={vbY} width={vbW} height={vbH} fill={`url(#${gridId})`} />
 
@@ -745,7 +816,9 @@ export default function MachineBuilder(props: MachineBuilderProps) {
 
           {/* states */}
           {design.states.map((q) => {
-            const lit = current === q.id && !!design.start && !stuckNow;
+            // While the orb runs, the state it left stays lit until it arrives.
+            const lit = (orbRun ? orbRun.from === q.id : current === q.id && !stuckNow) && !!design.start;
+            const orbHere = lit && !orbRun;
             const isSel = sel?.kind === "state" && sel.id === q.id;
             const bad = markStates.has(q.id);
             return (
@@ -753,6 +826,7 @@ export default function MachineBuilder(props: MachineBuilderProps) {
                 {isSel && <circle r={R + 7} fill="var(--fsm-select)" />}
                 <circle r={R} fill={lit ? "var(--fsm-lit)" : "var(--surface)"} stroke={INK} strokeWidth={lit ? 2.4 : 1.5} />
                 {q.accepting && <circle r={R - 4.5} fill="none" stroke={INK} strokeWidth={1.2} />}
+                {orbHere && <circle r={ORB_REST} fill={`url(#${orbId}-rest)`} stroke="var(--accent-deep)" strokeOpacity={0.6} strokeWidth={1} data-orb="rest" />}
                 {editor?.kind === "name" && editor.id === q.id ? null : (
                   <text y={nameSize(q.name) * 0.36} fontSize={nameSize(q.name)} fontFamily={MONO} fontWeight={600} textAnchor="middle" fill={INK} style={{ pointerEvents: "none" }}>
                     {q.name}
@@ -787,6 +861,12 @@ export default function MachineBuilder(props: MachineBuilderProps) {
               </g>
             );
           })}
+
+          {/* the orb on its way, over everything */}
+          {orbRun && (
+            <circle cx={orbRun.x} cy={orbRun.y} r={orbRun.r} fill={`url(#${orbId}-run)`}
+              stroke="var(--accent-deep)" strokeWidth={1} style={{ pointerEvents: "none" }} data-orb="run" />
+          )}
         </svg>
 
         {/* view controls, in the corner of the canvas */}
@@ -931,7 +1011,7 @@ export default function MachineBuilder(props: MachineBuilderProps) {
           </label>
           <Button onClick={() => { setPlaying(false); setPos(0); }} disabled={pos === 0}>Start</Button>
           <Button onClick={() => { setPlaying(false); setPos((p) => Math.max(0, p - 1)); }} disabled={pos === 0}>Back</Button>
-          <Button onClick={() => { setPlaying(false); setPos((p) => Math.min(word.length, p + 1)); }} disabled={pos >= word.length}>Step</Button>
+          <Button onClick={() => { setPlaying(false); if (pos < word.length) { stepTo.current = pos + 1; setPos(pos + 1); } }} disabled={pos >= word.length}>Step</Button>
           <Button onClick={() => { if (playing) setPlaying(false); else { setPos(0); setPlaying(true); } }} disabled={word.length === 0}>
             {playing ? "Pause" : "Play"}
           </Button>
@@ -945,7 +1025,7 @@ export default function MachineBuilder(props: MachineBuilderProps) {
                 <button
                   key={i}
                   type="button"
-                  onClick={() => { setPlaying(false); setPos(i + 1); }}
+                  onClick={() => { setPlaying(false); if (i === pos) stepTo.current = pos + 1; setPos(i + 1); }}
                   title={`Show the machine after reading ${i + 1} symbol${i === 0 ? "" : "s"}`}
                   style={{
                     width: 24, height: 28, fontFamily: MONO, fontSize: 14, fontWeight: 600,
