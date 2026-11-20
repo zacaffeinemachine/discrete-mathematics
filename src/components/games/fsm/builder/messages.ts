@@ -100,5 +100,15 @@ export const MSG = {
   historyLabel: "Where it could be",
   historyTitle: "The states the machine could be in after reading each beginning of the string",
   emptyPrefix: "the empty string",
+  // The tree of runs, beside the canvas.
+  showRuns: "Show runs",
+  showRunsTitle: "Draw every attempt of the machine on the string on the tape, as a tree",
+  runsTitle: (w: string) => `All the attempts on ${w === "" ? "the empty string" : w}`,
+  runsCaption: "A path from the top to the bottom row is a run.",
+  runsReads: "reads",
+  runsStuck: "stuck",
+  runsCut: (k: number, n: number) =>
+    `The tree is drawn for the first ${k === 1 ? "" : `${k} `}of ${n} symbols. It has too many branches to draw in full.`,
+  runsLabel: "The tree of all the attempts",
   hintNfa: "Click a state and then another to draw an arrow. A state may have several arrows for one symbol, or none. Double-click a state to rename it, or an arrow to label it. Drag a state to move it, an arrow to bend it, or empty space to move the view.",
 } as const;

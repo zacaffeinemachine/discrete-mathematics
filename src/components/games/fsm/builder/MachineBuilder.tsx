@@ -37,7 +37,9 @@
 //                     deterministic machine is not the smallest NFA.
 //   free              a sandbox with no language and no Check, over `alphabet`.
 // `preset` is a drawn machine loaded when nothing is saved, and Reset goes
-// back to it.
+// back to it. In nondeterministic mode, Show runs opens a panel beside the
+// canvas (below it on a narrow screen) with the tree of every attempt on the
+// string on the tape (engine.ts runTree), dimmed below the tape's position.
 //
 // Work is saved in localStorage under dm.automata.v1:<page>:<id>, and in the
 // other modes under dm.automata.v1:<page>:nfa:<id>, :free:<id> or
@@ -47,7 +49,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { usePersistent } from "../../shared/storage";
 import { AuthorError, Button, Row, Status } from "../../shared/ui";
-import { OTHER, compare, compareNfa, missingArrows, nfaFromEdges, parseConvention, parseLabel, runMachine, runNfa, specFromEdges, targetOf, type DrawnEdge } from "./engine";
+import { OTHER, compare, compareNfa, missingArrows, nfaFromEdges, parseConvention, parseLabel, runMachine, runNfa, runTree, specFromEdges, targetOf, type DrawnEdge, type RunTree } from "./engine";
 import { R, START_LEN, angleThrough, bendThrough, distToSamples, layoutEdges, type Pt } from "./geometry";
 import { LANGUAGES } from "./languages";
 import { MSG } from "./messages";
@@ -107,7 +109,7 @@ interface BState { id: string; name: string; x: number; y: number; accepting: bo
 interface Convention { name: string; def: string }
 interface Design { states: BState[]; start: string | null; edges: DrawnEdge[]; conventions: Convention[] }
 interface View { cx: number; cy: number; z: number }      // centre of the view and zoom (1 = the canvas at its natural size)
-interface Saved { design: Design; word: string; solved: boolean; height: number | null; colour: boolean; view: View | null }
+interface Saved { design: Design; word: string; solved: boolean; height: number | null; colour: boolean; view: View | null; runs?: boolean }
 
 type Target = { kind: "state"; id: string } | { kind: "edge"; index: number };
 type Drag =
@@ -173,7 +175,7 @@ export default function MachineBuilder(props: MachineBuilderProps) {
     const vw = v.view;
     const view = vw && Number.isFinite(vw.cx) && Number.isFinite(vw.cy) && Number.isFinite(vw.z)
       ? { cx: vw.cx, cy: vw.cy, z: Math.min(Z_MAX, Math.max(Z_MIN, vw.z)) } : null;
-    return { design: { states, start, edges, conventions }, word, solved: !!v.solved, height, colour: !!v.colour, view };
+    return { design: { states, start, edges, conventions }, word, solved: !!v.solved, height, colour: !!v.colour, view, ...(v.runs ? { runs: true } : {}) };
   };
   const [saved, setSaved, resetSaved] = usePersistent<Saved>(storeId, "machine-v2", fresh, revive, STORE);
   const design = saved.design;
@@ -247,6 +249,8 @@ export default function MachineBuilder(props: MachineBuilderProps) {
     [nondet, design, alphabet.join(""), convMap],
   );
   const nwalk = useMemo(() => (nspec ? runNfa(nspec, word) : null), [nspec, word]);
+  const showRuns = !!nspec && !!saved.runs;
+  const tree = useMemo(() => (showRuns && nspec ? runTree(nspec, word) : null), [showRuns, nspec, word]);
   // The arrows taken on the step into position k: from every state the
   // machine could be in, every arrow that reads the symbol.
   const takenInto = (k: number): number[] => {
@@ -775,7 +779,7 @@ export default function MachineBuilder(props: MachineBuilderProps) {
 
   // ---- drawing ----
   return (
-    <div ref={boxRef} className="not-prose machine-builder" style={{ margin: "12px 0" }}>
+    <div className="not-prose machine-builder" style={{ margin: "12px 0" }}>
       <Row style={{ marginTop: 0, marginBottom: 8 }}>
         <Button onClick={() => addState(true)} disabled={!!design.start}>Add start state</Button>
         <Button onClick={() => addState(false)}>Add state</Button>
@@ -786,6 +790,9 @@ export default function MachineBuilder(props: MachineBuilderProps) {
         <Button onClick={doUndo} disabled={undo.current.length === 0}>Undo</Button>
         <Button onClick={reset}>Reset</Button>
         {!free && <Button main onClick={check}>Check</Button>}
+        {nondet && (
+          <Button pressed={showRuns} title={MSG.showRunsTitle} onClick={() => setSaved((s) => ({ ...s, runs: !s.runs }))}>{MSG.showRuns}</Button>
+        )}
       </Row>
 
       {showConventions && (
@@ -828,6 +835,9 @@ export default function MachineBuilder(props: MachineBuilderProps) {
         </div>
       )}
 
+      {/* The canvas, and beside it (below it on a narrow screen) the tree of runs. */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "flex-start" }}>
+      <div ref={boxRef} style={{ flex: "3 1 360px", minWidth: 0 }}>
       <div ref={wrapRef} style={{ position: "relative" }}>
         <svg
           ref={svgRef}
@@ -1068,6 +1078,25 @@ export default function MachineBuilder(props: MachineBuilderProps) {
           />
         )}
       </div>
+      </div>
+      {tree && (
+        <aside role="region" aria-label={MSG.runsLabel} data-runs-panel=""
+          style={{ flex: "1 1 220px", minWidth: 0, border: "1px solid var(--rule)", borderRadius: 6, background: "var(--surface)", padding: "8px 10px" }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: INK, marginBottom: 4, overflowWrap: "anywhere" }}>{MSG.runsTitle(word)}</div>
+          {design.start ? (
+            <div style={{ overflow: "auto", maxHeight: 560 }}>
+              <RunTreeView tree={tree} word={word} pos={pos} name={nameOf} accepting={(sid) => !!stateById.get(sid)?.accepting} />
+            </div>
+          ) : (
+            <div style={{ fontSize: 12.5, color: MUTED }}>{MSG.noStart}</div>
+          )}
+          {design.start && <div style={{ fontSize: 12, color: MUTED, marginTop: 4 }}>{MSG.runsCaption}</div>}
+          {tree.truncatedAt !== null && (
+            <div style={{ fontSize: 12, color: INK, marginTop: 4 }} data-runs-cut="">{MSG.runsCut(tree.truncatedAt, word.length)}</div>
+          )}
+        </aside>
+      )}
+      </div>
 
       <div style={{ fontSize: 12.5, color: MUTED, marginTop: 6, minHeight: 18 }}>{hint}</div>
 
@@ -1158,6 +1187,64 @@ export default function MachineBuilder(props: MachineBuilderProps) {
       </div>
 
     </div>
+  );
+}
+
+// The tree of runs, drawn as the notes draw it (figure:nfa-run-trees): the
+// root at the top, one row per symbol, the symbol read in a gray gutter
+// headed "reads", accepting states doubled, a gray "stuck" under an attempt
+// with no arrow for the next symbol. Leaves sit one slot apart, left to right,
+// and each parent is centred over its children. Rows the tape has not reached
+// yet are dimmed, so stepping grows the tree.
+function RunTreeView({ tree, word, pos, name, accepting }: {
+  tree: RunTree; word: string; pos: number; name: (sid: string) => string; accepting: (sid: string) => boolean;
+}) {
+  const NR = 13, DX = 38, DY = 50, GUT = 40, TOP = 26, PAD = 8;
+  const xs: number[] = new Array(tree.nodes.length).fill(0);
+  let slot = 0;
+  const place = (i: number) => {
+    const n = tree.nodes[i];
+    if (n.children.length === 0) { xs[i] = slot++; return; }
+    n.children.forEach(place);
+    xs[i] = (xs[n.children[0]] + xs[n.children[n.children.length - 1]]) / 2;
+  };
+  if (tree.nodes.length) place(0);
+  const X = (i: number) => GUT + PAD + DX / 2 + xs[i] * DX;
+  const Y = (d: number) => TOP + NR + d * DY;
+  const width = GUT + 2 * PAD + Math.max(1, slot) * DX;
+  const height = Y(tree.drawn) + NR + 20;
+  const DIM = 0.25;
+  const seen = (d: number) => d <= pos;
+  return (
+    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} role="img" aria-label={MSG.runsLabel} style={{ display: "block", margin: "0 auto" }}>
+      <text x={GUT / 2} y={Y(0) - DY / 2 + 4} fontSize={11.5} fontFamily={SANS} textAnchor="middle" fill={MUTED}>{MSG.runsReads}</text>
+      {Array.from({ length: tree.drawn }, (_, k) => k + 1).map((d) => (
+        <text key={`r${d}`} x={GUT / 2} y={Y(d) - DY / 2 + 4} fontSize={13} fontFamily={MONO} textAnchor="middle"
+          fill={d === pos ? INK : MUTED} fontWeight={d === pos ? 700 : 400} opacity={seen(d) ? 1 : DIM}>{word[d - 1]}</text>
+      ))}
+      {tree.nodes.map((n, i) => {
+        if (n.parent === null) return null;
+        const x0 = X(n.parent), y0 = Y(n.depth - 1) + NR, x1 = X(i), y1 = Y(n.depth) - NR - 1;
+        const L = Math.hypot(x1 - x0, y1 - y0) || 1, ux = (x1 - x0) / L, uy = (y1 - y0) / L;
+        const hx = x1 - ux * 7, hy = y1 - uy * 7;
+        return (
+          <g key={`e${i}`} opacity={seen(n.depth) ? 1 : DIM}>
+            <line x1={x0} y1={y0} x2={hx} y2={hy} stroke="var(--fsm-edge)" strokeWidth={1.4} />
+            <path d={`M ${x1} ${y1} L ${hx - uy * 3.5} ${hy + ux * 3.5} L ${hx + uy * 3.5} ${hy - ux * 3.5} Z`} fill="var(--fsm-edge)" />
+          </g>
+        );
+      })}
+      {tree.nodes.map((n, i) => (
+        <g key={`n${i}`} transform={`translate(${X(i)},${Y(n.depth)})`} opacity={seen(n.depth) ? 1 : DIM} data-run-node={n.state}>
+          <circle r={NR} fill="var(--surface)" stroke={INK} strokeWidth={1.4} />
+          {accepting(n.state) && <circle r={NR - 3.5} fill="none" stroke={INK} strokeWidth={1.1} />}
+          <text y={4} fontSize={name(n.state).length <= 2 ? 11.5 : 9.5} fontFamily={MONO} fontWeight={600} textAnchor="middle" fill={INK}>{name(n.state)}</text>
+          {n.stuck && (
+            <text y={NR + 13} fontSize={11} fontFamily={SANS} textAnchor="middle" fill={MUTED} opacity={seen(n.depth + 1) || !seen(n.depth) ? 1 : DIM} data-stuck="">{MSG.runsStuck}</text>
+          )}
+        </g>
+      ))}
+    </svg>
   );
 }
 

@@ -283,6 +283,15 @@ With none of them set it behaves exactly as before.
   set becomes the union of the targets. A set that empties stops the run ("every way of
   reading this string has got stuck"). Under the tape a line lists the set after each
   prefix read so far (`ε → {p0}`, `0 → {p0}`, `01 → {p0, p1}`), which is raw state.
+- **Show runs** (nondeterministic mode only) opens a panel beside the canvas, or below it
+  at phone width, drawing the tree of every attempt on the string on the tape, as the
+  notes' figure `figure:nfa-run-trees` does: the start at the top, one row per symbol with
+  the symbol in a gray *reads* gutter, children in state creation order, equal states
+  never merged, and a gray *stuck* under an attempt with no arrow for the next symbol.
+  Rows below the tape's position are dimmed, so stepping grows the tree. It marks no run
+  as accepting: the tape already gives the verdict. `runTree` in `engine.ts` builds it a
+  whole row at a time and stops before 150 nodes or 40 leaves, and the panel then says
+  how many symbols are drawn. Whether the panel is open is saved with the machine.
 - **`free`** is a sandbox: no `language`, no *Check*, no *solved* badge. `alphabet`
   (default `0`, `1`) gives its symbols. A builder with a language takes the language's.
 - **`preset`** `{ states: {id, name, x, y, accepting}[]; start; edges: {from, to, label,

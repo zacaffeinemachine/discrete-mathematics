@@ -399,3 +399,55 @@ export function checkNfa(m: NfaSpec, alphabet: Sym[], target: Dfa, index?: (a: S
   if (bad) return { status: "wrong", word: bad.word, accepts: bad.accepts };
   return { status: "ok", states: m.states.length };
 }
+
+// ---- the tree of runs ------------------------------------------------------------
+//
+// Every attempt of a nondeterministic machine on a string, as a tree: the
+// root is the start state, and the children of a node at depth d are the
+// states its state has arrows to on the (d+1)-th symbol, in state order.
+// Equal states are not merged. A node below the last row with no arrow for
+// the next symbol is a stuck attempt. A path from the root to the bottom row
+// is a run.
+//
+// The tree can double with every symbol, so it is built a whole row at a
+// time and stops before a row that would take it past maxNodes nodes or
+// maxWidth leaves (the drawing is as wide as its leaves). truncatedAt is then
+// the number of symbols drawn.
+
+export interface RunNode {
+  state: string;
+  depth: number;             // symbols read to reach it
+  parent: number | null;     // index in nodes
+  children: number[];
+  stuck: boolean;            // it had no arrow for the next symbol, and that symbol is drawn
+}
+
+export interface RunTree {
+  nodes: RunNode[];          // row by row, left to right
+  drawn: number;             // symbols drawn: the depth of the bottom row
+  truncatedAt: number | null;  // = drawn when the tree was cut short, else null
+}
+
+export function runTree(m: NfaSpec, word: string, maxNodes = 150, maxWidth = 40): RunTree {
+  if (m.start === null || !m.states.includes(m.start)) return { nodes: [], drawn: 0, truncatedAt: null };
+  const nodes: RunNode[] = [{ state: m.start, depth: 0, parent: null, children: [], stuck: false }];
+  let row = [0];
+  let stuckLeaves = 0;
+  for (let d = 0; d < word.length; d++) {
+    const next: { parent: number; state: string }[] = [];
+    let stuckHere = 0;
+    for (const i of row) {
+      const to = m.arrows[nodes[i].state]?.[word[d]] ?? [];
+      if (to.length === 0) stuckHere++;
+      for (const t of m.states) if (to.includes(t)) next.push({ parent: i, state: t });
+    }
+    if (nodes.length + next.length > maxNodes || stuckLeaves + stuckHere + next.length > maxWidth)
+      return { nodes, drawn: d, truncatedAt: d };
+    stuckLeaves += stuckHere;
+    const start = nodes.length;
+    for (const i of row) if ((m.arrows[nodes[i].state]?.[word[d]] ?? []).length === 0) nodes[i].stuck = true;
+    next.forEach((c, k) => { nodes.push({ state: c.state, depth: d + 1, parent: c.parent, children: [], stuck: false }); nodes[c.parent].children.push(start + k); });
+    row = next.map((_, k) => start + k);
+  }
+  return { nodes, drawn: word.length, truncatedAt: null };
+}

@@ -466,5 +466,53 @@ const click = async (el: Element) => { await act(async () => { fireEvent.click(e
   cleanup();
 }
 
+// ------------------------------------------------------------ Machine builder, the tree of runs
+{
+  const { THIRD_FROM_END } = await import("../src/components/games/fsm/nfaPresets.ts");
+  // Not offered in the deterministic builder.
+  await act(async () => { render(React.createElement(MachineBuilder, { id: "dfa-runs", language: "ends-and-beginnings/ends-00" })); });
+  ok(screen.queryByRole("button", { name: /^Show runs$/ }) === null, "the deterministic builder has no Show runs");
+  cleanup();
+
+  window.localStorage.clear();
+  await act(async () => {
+    render(React.createElement(MachineBuilder, { id: "runs", free: true, nondeterministic: true, alphabet: ["0", "1"], preset: THIRD_FROM_END }));
+  });
+  const show = () => screen.getByRole("button", { name: /^Show runs$/ });
+  const panel = () => document.querySelector("[data-runs-panel]");
+  const nodes = () => [...document.querySelectorAll("[data-run-node]")];
+  const dimmed = () => nodes().filter((n) => n.getAttribute("opacity") !== "1").length;
+  const stuck = () => document.querySelectorAll("[data-stuck]").length;
+  ok(show().getAttribute("aria-pressed") === "false" && panel() === null, "the panel starts closed");
+
+  await click(show());
+  ok(show().getAttribute("aria-pressed") === "true" && panel() !== null, "Show runs opens the panel");
+  ok(nodes().length === 1 && nodes()[0].getAttribute("data-run-node") === "q0", "on the empty tape the tree is just the root");
+
+  await act(async () => { fireEvent.change(screen.getByLabelText("A string to run through the machine"), { target: { value: "0110" } }); });
+  ok(nodes().length === 10 && stuck() === 0, `0110: ten nodes and nothing stuck, got ${nodes().length} and ${stuck()}`);
+  ok(nodes().filter((n) => n.querySelectorAll("circle").length === 2).length === 1, "one accepting node, drawn doubled");
+  ok(dimmed() === 0, "at the end of the tape nothing is dimmed");
+  await click(btn(/^Start$/));
+  ok(dimmed() === 9, `at the start every row but the root is dimmed, got ${dimmed()}`);
+  await click(btn(/^Step$/));
+  await click(btn(/^Step$/));
+  ok(dimmed() === 6, `after two symbols the rows below are dimmed, got ${dimmed()}`);
+  ok((panel()?.textContent ?? "").includes("reads"), "the gutter is headed reads");
+
+  await act(async () => { fireEvent.change(screen.getByLabelText("A string to run through the machine"), { target: { value: "1000" } }); });
+  ok(nodes().length === 8 && stuck() === 1, `1000: eight nodes and one stuck attempt, got ${nodes().length} and ${stuck()}`);
+  ok(!/accepting run|Accepted/.test(panel()?.textContent ?? ""), "the panel gives no verdict");
+
+  const saved = JSON.stringify(Object.entries(window.localStorage));
+  ok(saved.includes('\\"runs\\":true'), "the open panel is saved with the rest");
+  await act(async () => { fireEvent.change(screen.getByLabelText("A string to run through the machine"), { target: { value: "01100101011" } }); });
+  ok((panel()?.textContent ?? "").includes("The tree is drawn for the first") === false, "N3 on 11 symbols still fits");
+
+  await click(show());
+  ok(show().getAttribute("aria-pressed") === "false" && panel() === null, "pressing again closes it");
+  cleanup();
+}
+
 console.log(fails === 0 ? "widgets: all checks passed" : `widgets: ${fails} FAILED`);
 process.exit(fails === 0 ? 0 : 1);

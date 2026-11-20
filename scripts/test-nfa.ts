@@ -6,7 +6,7 @@
 // solutions stored for any page: the site stores no machine anywhere.
 
 import {
-  allStrings, checkNfa, compare, compareNfa, nfaFromEdges, runMachine, runNfa, specFromEdges, targetOf,
+  allStrings, checkNfa, compare, compareNfa, nfaFromEdges, runMachine, runNfa, runTree, specFromEdges, targetOf,
   type DrawnEdge, type MachineSpec, type NfaSpec,
 } from "../src/components/games/fsm/builder/engine.ts";
 
@@ -247,6 +247,73 @@ for (const { name, m, accepts } of correct) {
     .map(([from, to, l]) => ({ from, to, label: l.split(",") }));
   const d = specFromEdges(["p0", "p1", "p2", "p3"], "p0", ["p3"], drawn, B);
   ok(d.clashes.length === 1 && d.clashes[0].state === "p0" && d.clashes[0].symbol === "1", "read as a DFA, p0 clashes on 1");
+}
+
+// ---- the tree of runs ------------------------------------------------------------------
+{
+  // N_3 of the notes, with its states named as there.
+  const N3 = nfa(["q0", "q1", "q2", "q3"], ["q3"], [
+    ["q0", "q0", "0,1"], ["q0", "q1", "1"], ["q1", "q2", "0,1"], ["q2", "q3", "0,1"],
+  ]).spec;
+  // Every path from the root to a leaf, as a list of states, and whether it ends stuck.
+  const paths = (w: string) => {
+    const t = runTree(N3, w);
+    const out: { path: string; stuck: boolean; full: boolean }[] = [];
+    t.nodes.forEach((n, i) => {
+      if (n.children.length) return;
+      const p: string[] = [];
+      for (let j: number | null = i; j !== null; j = t.nodes[j].parent) p.unshift(t.nodes[j].state);
+      out.push({ path: p.join(","), stuck: n.stuck, full: n.depth === w.length });
+    });
+    return { t, out };
+  };
+
+  // Figure figure:nfa-run-trees, left: three runs on 0110, ending q0, q2, q3
+  // from left to right, and no stuck attempt.
+  {
+    const { t, out } = paths("0110");
+    ok(t.truncatedAt === null && t.drawn === 4, "0110: drawn in full");
+    ok(t.nodes.length === 10, `0110: ten nodes, as in the figure, got ${t.nodes.length}`);
+    ok(out.map((o) => o.path).join(" ") === "q0,q0,q0,q0,q0 q0,q0,q0,q1,q2 q0,q0,q1,q2,q3",
+       `0110: the three runs, got ${out.map((o) => o.path).join(" ")}`);
+    ok(out.every((o) => o.full && !o.stuck), "0110: every leaf is at full depth, none stuck");
+    ok(t.nodes.filter((n) => n.depth === 2).map((n) => n.state).join() === "q0,q1", "0110: children in state order");
+  }
+  // Right: one run on 1000, and the attempt q0, q1, q2, q3 stuck.
+  {
+    const { t, out } = paths("1000");
+    ok(t.nodes.length === 8, `1000: eight nodes, got ${t.nodes.length}`);
+    const runs = out.filter((o) => o.full), stuck = out.filter((o) => o.stuck);
+    ok(runs.length === 1 && runs[0].path === "q0,q0,q0,q0,q0", `1000: one run, q0 throughout, got ${runs.map((o) => o.path)}`);
+    ok(stuck.length === 1 && stuck[0].path === "q0,q1,q2,q3", `1000: one stuck attempt q0,q1,q2,q3, got ${stuck.map((o) => o.path)}`);
+  }
+  // The empty string: just the root.
+  {
+    const t = runTree(N3, "");
+    ok(t.nodes.length === 1 && t.nodes[0].state === "q0" && t.drawn === 0 && !t.nodes[0].stuck, "the empty string: only the root");
+    ok(runTree({ ...N3, start: null }, "01").nodes.length === 0, "no start: no tree");
+  }
+  // The bottom row, as a set, is what runNfa says the machine could end in.
+  for (const w of allStrings(B, 7)) {
+    const t = runTree(N3, w, 100000, 100000);
+    const bottom = new Set(t.nodes.filter((n) => n.depth === w.length).map((n) => n.state));
+    const fin = runNfa(N3, w).sets[w.length];
+    ok(fin.length === bottom.size && fin.every((q) => bottom.has(q)), `${w}: the bottom row is ${[...bottom]}, the set is ${fin}`);
+    // and every row d holds exactly the attempts: no merging, so the row's size is the number of paths
+    ok(t.nodes.every((n) => n.stuck === (n.depth < w.length && (N3.arrows[n.state]?.[w[n.depth]] ?? []).length === 0)), `${w}: stuck exactly where there is no arrow`);
+  }
+  // A blow-up: two states, each with arrows to both on every symbol, so row d has 2^d nodes.
+  {
+    const blow = nfa(["a", "b"], ["b"], [["a", "a", "0,1"], ["a", "b", "0,1"], ["b", "a", "0,1"], ["b", "b", "0,1"]]).spec;
+    const w = "01100101011";
+    const t = runTree(blow, w);
+    // rows 1, 2, 4, 8, 16, 32 (63 nodes) fit, and 64 leaves would pass the width of 40
+    ok(t.truncatedAt === 5 && t.drawn === 5 && t.nodes.length === 63, `blow-up: cut after 5 symbols with 63 nodes, got ${t.truncatedAt}, ${t.nodes.length}`);
+    ok(t.nodes.every((n) => n.depth <= 5) && t.nodes.filter((n) => n.depth === 5).length === 32, "whole rows only");
+    const u = runTree(blow, w, 150, 1000);
+    ok(u.truncatedAt === 6 && u.nodes.length === 127, `blow-up, node cap only: cut after 6 with 127 nodes, got ${u.truncatedAt}, ${u.nodes.length}`);
+    ok(runTree(blow, "0110").truncatedAt === null, "a short string is drawn in full");
+  }
 }
 
 console.log(fails === 0 ? "nfa: all checks passed" : `nfa: ${fails} FAILED`);
