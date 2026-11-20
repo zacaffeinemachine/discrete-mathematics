@@ -4,8 +4,8 @@ title: How Long Is the String?
 order: 3
 chapter: automata
 chapterTitle: Automata
-blurb: Problems where the symbols do not matter and only the count of them does, and then problems where both matter at once.
-description: "Design-a-machine problems about the length of the input and about positions within it."
+blurb: Problems where the symbols do not matter and only the count of them does.
+description: "Design-a-machine problems about the length of the input."
 ---
 import { Problem, Tests } from "../../components/games/fsm/Problem.tsx";
 import MachineBuilder from "../../components/games/fsm/builder/MachineBuilder.tsx";
@@ -38,40 +38,4 @@ Design a machine that accepts exactly the strings of length 2 or less.
 Design a machine that accepts exactly the strings of length 4 or more.
 <Tests accept={["0000", "1010", "00000", "1111011"]} reject={["", "0", "01", "010", "111"]} />
 <MachineBuilder client:visible language="length/at-least-four" />
-</Problem>
-
-<Problem n={6} title="Length and last symbol together" optional>
-Design a machine that accepts exactly the strings whose length is a multiple
-of 3 **and** whose last symbol is `1`.
-<Tests accept={["001", "111", "010101", "101011"]} reject={["", "1", "11", "010", "0101"]} />
-<MachineBuilder client:visible language="length/length-and-last" />
-</Problem>
-
-<Problem n={7} title="A symbol at a fixed position" hard>
-Design a machine that accepts exactly the strings that have length at least 3 and whose **third**
-symbol is a `0`.
-<Tests accept={["000", "110", "1101", "0000"]} reject={["", "1", "10", "111", "1011"]} />
-<MachineBuilder client:visible language="length/fixed-position" />
-</Problem>
-
-<Problem n={8} title="Every other position" hard>
-Design a machine that accepts exactly the strings in which every symbol at an odd-numbered position
-is a `1`. Positions are counted from 1, so this is the 1st symbol, the 3rd,
-the 5th, and so on. The symbols at even positions may be anything.
-<Tests accept={["", "1", "10", "11", "1010", "1011"]} reject={["0", "01", "0101", "1100", "110"]} />
-<MachineBuilder client:visible language="length/every-other" />
-</Problem>
-
-<Problem n={9} title="The first symbol decides which rule applies" hard>
-Design a machine that accepts exactly the strings that either begin with `1`
-and have even length, or begin with `0` and have odd length.
-<Tests accept={["0", "10", "010", "1010", "00000"]} reject={["", "1", "00", "0101", "101"]} />
-<MachineBuilder client:visible language="length/first-decides" />
-</Problem>
-
-<Problem n={10} title="Even or a multiple of three" hard>
-Design a machine that accepts exactly the strings whose length is even **or**
-a multiple of 3, or both.
-<Tests accept={["", "01", "010", "0101", "010101", "01010101"]} reject={["0", "01010", "0101010", "01010101010"]} />
-<MachineBuilder client:visible language="length/even-or-three" />
 </Problem>

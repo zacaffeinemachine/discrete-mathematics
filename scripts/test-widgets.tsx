@@ -42,6 +42,7 @@ const BallBoggle = (await import("../src/components/games/BallBoggle.tsx")).defa
 const HanoiPuzzle = (await import("../src/components/games/HanoiPuzzle.tsx")).default;
 const RestlessRow = (await import("../src/components/games/RestlessRow.tsx")).default;
 const TrominoPuzzle = (await import("../src/components/games/TrominoPuzzle.tsx")).default;
+const MachineBuilder = (await import("../src/components/games/fsm/builder/MachineBuilder.tsx")).default;
 
 let fails = 0;
 const ok = (c: boolean, m: string) => {
@@ -350,6 +351,118 @@ const click = async (el: Element) => { await act(async () => { fireEvent.click(e
   // One undo reverts the entire hand-over, not 20 of its 21 tiles.
   await click(btn(/^Undo$/));
   ok(stat("Tiles laid") === "1", `undo reverts the whole hand-over, got "${stat("Tiles laid")}"`);
+  cleanup();
+}
+
+// ------------------------------------------------------------ Machine builder, nondeterministic
+// A preset NFA for "ends in 00" (a test fixture, not stored for any page):
+// p0 loops on 0 and 1 and also reads 0 to p1, p1 reads 0 to p2, p2 accepts.
+// p0 has two arrows for 0 and p1, p2 have none for 1.
+{
+  const S = (id: string, x: number, accepting = false) => ({ id, name: id, x, y: 150, accepting });
+  const ends00 = {
+    states: [S("p0", 100), S("p1", 250), S("p2", 400, true)],
+    start: "p0",
+    edges: [
+      { from: "p0", to: "p0", label: ["0", "1"] },
+      { from: "p0", to: "p1", label: ["0"] },
+      { from: "p1", to: "p2", label: ["0"] },
+    ],
+  };
+  const text = () => (document.body.textContent ?? "").replace(/\s+/g, " ");
+  const tapeInput = () => screen.getByLabelText("A string to run through the machine");
+  const orbs = (kind: string) => document.querySelectorAll(`circle[data-orb="${kind}"]`).length;
+  window.localStorage.clear();
+  // The shim above passes 0 as the frame time, so an animation timed by its
+  // frames (the builder's orbs) would never end. Real timestamps here.
+  g.requestAnimationFrame = (cb: FrameRequestCallback) => dom.window.setTimeout(() => cb(performance.now()), 16);
+
+  await act(async () => {
+    render(React.createElement(MachineBuilder, { id: "nfa-test", language: "ends-and-beginnings/ends-00", nondeterministic: true, preset: ends00 }));
+  });
+  ok(/States: 3/.test(text()), "the preset is drawn: 3 states");
+  ok(orbs("rest") === 1, `one orb at rest, on the start, got ${orbs("rest")}`);
+
+  await act(async () => { fireEvent.change(tapeInput(), { target: { value: "100" } }); });
+  ok(text().includes("It could end in p0, p1 or p2. p2 is accepting. Accepted."), `100 ends in {p0, p1, p2}, accepted: "${text()}"`);
+  ok(orbs("rest") === 3, `an orb on each of the three states, got ${orbs("rest")}`);
+  ok(text().includes("ε → {p0}") && text().includes("10 → {p0, p1}") && text().includes("100 → {p0, p1, p2}"), "the history lists the set after each prefix");
+
+  await click(btn(/^Start$/));
+  ok(text().includes("Not started. The machine is in p0, the start."), "Start goes back to the start");
+  await click(btn(/^Step$/));
+  ok(text().includes("Read 1 of 3. The machine could only be in p0."), "after 1, only p0");
+  await click(btn(/^Step$/));
+  ok(text().includes("Read 2 of 3. The machine could be in p0 or p1."), "after 10, p0 or p1");
+  ok(orbs("run") === 2, `on 0 from p0 one orb runs along each of the two arrows, got ${orbs("run")}`);
+  await settle(() => orbs("run") === 0, 3000);
+  ok(orbs("run") === 0 && orbs("rest") === 2, `then they rest on p0 and p1, got ${orbs("rest")}`);
+
+  await click(btn(/^Check$/));
+  const verdict = () => [...document.querySelectorAll('[role="status"]')].map((e) => e.textContent).join(" ");
+  ok(verdict().includes("Correct. Your machine accepts exactly the right strings"), `a correct NFA checks as correct, got "${verdict()}"`);
+  ok(!/Two arrows|Not every state|fewer states/.test(verdict()), `no clash, no missing arrow, no claim about the fewest states: "${verdict()}"`);
+
+  const keys = Object.keys(window.localStorage);
+  ok(keys.some((k) => k === "dm.automata.v1::nfa:nfa-test") && !keys.some((k) => k === "dm.automata.v1::nfa-test"),
+     `an NFA builder saves under its own key, got ${keys.join(" ")}`);
+
+  await click(btn(/^Reset$/));
+  ok(/States: 3/.test(text()) && (tapeInput() as HTMLInputElement).value === "", "Reset goes back to the preset, with an empty tape");
+  cleanup();
+}
+
+// The same drawing with p0's loop left off accepts exactly 00: the check
+// finds 000, the set empties on it, and the tape says so.
+{
+  const S = (id: string, x: number, accepting = false) => ({ id, name: id, x, y: 150, accepting });
+  const exactly00 = {
+    states: [S("p0", 100), S("p1", 250), S("p2", 400, true)],
+    start: "p0",
+    edges: [{ from: "p0", to: "p1", label: ["0"] }, { from: "p1", to: "p2", label: ["0"] }],
+  };
+  const text = () => (document.body.textContent ?? "").replace(/\s+/g, " ");
+  await act(async () => {
+    render(React.createElement(MachineBuilder, { id: "nfa-wrong", language: "ends-and-beginnings/ends-00", nondeterministic: true, preset: exactly00 }));
+  });
+  await click(btn(/^Check$/));
+  ok(text().includes("Not yet. Your machine rejects 000, but it should accept it."), `the shortest wrong string is 000: "${text()}"`);
+  ok((screen.getByLabelText("A string to run through the machine") as HTMLInputElement).value === "000", "and it is loaded on the tape");
+  ok(text().includes("No state is left: every way of reading this string has got stuck. Rejected."), "the set empties on 000");
+  ok(text().includes("000 → ∅"), "and the history shows the empty set");
+  ok(![...document.querySelectorAll("svg text")].some((t) => /should (accept|reject)/.test(t.textContent ?? "")),
+     "no single state is marked as where it should end");
+  cleanup();
+}
+
+// The same drawing in the deterministic builder still clashes, exactly as before.
+{
+  const S = (id: string, x: number, accepting = false) => ({ id, name: id, x, y: 150, accepting });
+  const ends00 = {
+    states: [S("p0", 100), S("p1", 250), S("p2", 400, true)],
+    start: "p0",
+    edges: [{ from: "p0", to: "p0", label: ["0", "1"] }, { from: "p0", to: "p1", label: ["0"] }, { from: "p1", to: "p2", label: ["0"] }],
+  };
+  await act(async () => {
+    render(React.createElement(MachineBuilder, { id: "dfa-test", language: "ends-and-beginnings/ends-00", preset: ends00 }));
+  });
+  await click(btn(/^Check$/));
+  const t = (document.body.textContent ?? "").replace(/\s+/g, " ");
+  ok(t.includes("Two arrows leaving p0 are labelled 0."), `the deterministic builder reports the clash: "${t}"`);
+  ok(!t.includes("Where it could be"), "and shows no set history");
+  cleanup();
+}
+
+// A free sandbox: no language, no Check.
+{
+  await act(async () => {
+    render(React.createElement(MachineBuilder, { id: "sandbox", free: true, nondeterministic: true, alphabet: ["a", "b"] }));
+  });
+  const t = document.body.textContent ?? "";
+  ok(!t.includes("MachineBuilder:"), `a sandbox needs no language: "${t.slice(0, 120)}"`);
+  ok(screen.queryByRole("button", { name: /^Check$/ }) === null, "a sandbox has no Check button");
+  ok(!!screen.getByRole("button", { name: /^Add start state$/ }), "but it can be built on");
+  ok((screen.getByLabelText("A string to run through the machine") as HTMLInputElement).placeholder === "type a string of a b", "over its own alphabet");
   cleanup();
 }
 

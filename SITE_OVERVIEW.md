@@ -256,9 +256,76 @@ What changed in the port:
 - `scripts/test-machines.ts` is the original's `machine-builder.test.ts` with the page
   paths changed. It runs inside `npm test` and takes about two and a half minutes.
 
+**Only assessment-level problems (20 Nov 2026).** The author first had the harder problems
+marked optional (19 Nov), then decided the site should carry only problems at the level of
+the course's assessments. Every problem flagged `optional` or `hard` was deleted, 48 in all,
+with their predicates in `languages/`, and *The Deep End* went with them, since all ten of
+its problems were flagged. The rest were renumbered. `Problem` no longer takes `hard` or
+`optional`. The removed pages and problems are in git history (commit `1c35cc5` is the last
+with them) if the fuller set is ever wanted, for instance for the MathematicalThinking
+students.
+
 Unlike the induction widgets, the builder's *Check* gives a verdict on the student's own
 machine. That checks the student's work and does not hand over an answer, so it is not
 taken to break the arena rule above.
+
+### Nondeterministic and free builders (Nov 2026)
+
+`MachineBuilder` takes four optional props beyond `language`, `id`, `width`, `height`.
+With none of them set it behaves exactly as before.
+
+- **`nondeterministic`** lets a state have several arrows for one symbol, or none (there
+  are no ε-moves). Neither is reported on *Check*. An unlabelled arrow and an unknown
+  convention name still are. The word `other` keeps its meaning: every symbol that no
+  other arrow leaving the same state reads explicitly, so it never adds a second choice for
+  a symbol already written on an arrow from that state. On the tape the machine is in a
+  set of states: an orb rests on each, a step runs one orb along every arrow taken, and the
+  set becomes the union of the targets. A set that empties stops the run ("every way of
+  reading this string has got stuck"). Under the tape a line lists the set after each
+  prefix read so far (`ε → {p0}`, `0 → {p0}`, `01 → {p0, p1}`), which is raw state.
+- **`free`** is a sandbox: no `language`, no *Check*, no *solved* badge. `alphabet`
+  (default `0`, `1`) gives its symbols. A builder with a language takes the language's.
+- **`preset`** `{ states: {id, name, x, y, accepting}[]; start; edges: {from, to, label,
+  bend?, angle?}[] }` is drawn when nothing is saved, and *Reset* returns to it. It is for
+  a given example, such as the book's NFA on the page that introduces it, and never for the
+  answer to a problem on the same page.
+
+The nondeterministic *Check* is as exact as the deterministic one. `compareNfa` in
+`engine.ts` searches breadth-first over pairs (set of the student's states, state of the
+target), starting from ({start}, target start), and a pair disagrees when the set holds an
+accepting state and the target state does not, or the other way round. The first
+disagreement found is the shortest wrong string, shortest first and then in alphabet
+order, and it is loaded onto the tape as in the deterministic builder. Large alphabets go
+through `targetOf`'s `relevant` and `index` exactly as `compare` does.
+
+**On a correct NFA the builder says only that it is correct.** The deterministic builder
+adds "It can also be done with fewer states" or "No machine does it with fewer states",
+comparing the student's count with the number of states of the smallest *deterministic*
+machine. For an NFA that comparison means nothing: an NFA can need far fewer states than
+the smallest DFA (third symbol from the end is 1 takes 4 against 8), so either sentence
+could be false. For the same reason no state is marked "should accept" or "should reject"
+on a wrong NFA: it ends in a set, possibly empty, and no one state of it is to blame.
+
+Saves cannot collide across modes: the key is `dm.automata.v1:<page>:<id>` for the
+deterministic builder, as before, and `…:nfa:<id>`, `…:free:<id>` or `…:free:nfa:<id>`
+otherwise. `scripts/test-nfa.ts` covers the engine (the sets on a hand-built NFA, the
+check on correct and wrong NFAs against brute force, random NFAs against their own
+language, agreement with `compare` on deterministic machines, a 26-letter alphabet), and
+`scripts/test-widgets.tsx` drives a nondeterministic builder with a preset.
+
+## The Nondeterminism chapter (Nov 2026)
+
+`src/pages/nondeterminism/`, written for the notes' chapter of the same name. *Watch a
+Machine Guess* has three free nondeterministic builders: the notes' NFA N₃ (third symbol
+from the end) and the metro map as presets from `fsm/nfaPresets.ts`, and an empty canvas.
+The states are q0, q1, … as in the notes, which renamed them from p0, p1, … on 20 Nov 2026.
+The other three pages (*The Last Few Symbols*, *A Block Somewhere Inside*, *Two Cases*) are
+design problems with a nondeterministic builder each, drawn from the notes' exercises and
+pitched at the course's assessments. Their predicates are in
+`languages/nondeterminism.ts`, and their pages are in `test-machines.ts`'s `PAGES`. Page
+titles and blurbs name the topic only, never the construction (no "guess where the block
+begins"), by the author's standing rule that a problem asks the question and does not
+prescribe the method.
 
 ## Not yet built
 

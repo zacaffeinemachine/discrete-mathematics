@@ -1,0 +1,42 @@
+---
+layout: ../../layouts/Chapter.astro
+title: A Block Somewhere Inside
+order: 3
+chapter: nondeterminism
+chapterTitle: Nondeterminism
+blurb: A block of symbols somewhere inside the string, alone or together with a second rule.
+description: "Design-a-machine problems for nondeterministic machines, on a block of symbols inside the input."
+---
+import { Problem, Tests } from "../../components/games/fsm/Problem.tsx";
+import MachineBuilder from "../../components/games/fsm/builder/MachineBuilder.tsx";
+
+In every problem on this page your machine may be nondeterministic. A state may
+have several arrows for the same symbol, or none.
+
+<Problem n={1} title="A short block">
+Design a nondeterministic machine that accepts exactly the strings that contain
+`101` somewhere.
+<Tests accept={["101", "0101", "1101", "10100", "111011"]} reject={["", "1", "10", "100", "1001", "0110"]} />
+<MachineBuilder client:visible nondeterministic language="block-inside/contains-101" />
+</Problem>
+
+<Problem n={2} title="A longer block">
+Design a nondeterministic machine that accepts exactly the strings that contain
+`0110` somewhere.
+<Tests accept={["0110", "00110", "01101", "101100"]} reject={["", "011", "0111", "1010", "01010"]} />
+<MachineBuilder client:visible nondeterministic language="block-inside/contains-0110" />
+</Problem>
+
+<Problem n={3} title="Either block">
+Design a nondeterministic machine that accepts exactly the strings that contain
+`00` or `11` somewhere.
+<Tests accept={["00", "11", "100", "0110", "10100"]} reject={["", "0", "1", "01", "10", "0101", "10101"]} />
+<MachineBuilder client:visible nondeterministic language="block-inside/contains-00-or-11" />
+</Problem>
+
+<Problem n={4} title="A block, and then the end">
+Design a nondeterministic machine that accepts exactly the strings that contain
+`11` somewhere and end in `0`.
+<Tests accept={["110", "0110", "1100", "11010", "01110"]} reject={["", "0", "11", "011", "100", "1010", "1011"]} />
+<MachineBuilder client:visible nondeterministic language="block-inside/eleven-then-ends-0" />
+</Problem>

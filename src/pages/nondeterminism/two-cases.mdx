@@ -1,0 +1,35 @@
+---
+layout: ../../layouts/Chapter.astro
+title: Two Cases
+order: 4
+chapter: nondeterminism
+chapterTitle: Nondeterminism
+blurb: Languages described by two rules, of which a string must satisfy at least one.
+description: "Design-a-machine problems for nondeterministic machines, on languages made of two cases."
+---
+import { Problem, Tests } from "../../components/games/fsm/Problem.tsx";
+import MachineBuilder from "../../components/games/fsm/builder/MachineBuilder.tsx";
+
+In every problem on this page your machine may be nondeterministic. A state may
+have several arrows for the same symbol, or none.
+
+<Problem n={1} title="The same at both ends">
+Design a nondeterministic machine that accepts exactly the strings of length at
+least 2 whose first and last symbols are equal.
+<Tests accept={["00", "11", "010", "101", "0110", "1001"]} reject={["", "0", "1", "01", "10", "011", "1100"]} />
+<MachineBuilder client:visible nondeterministic language="two-cases/same-at-both-ends" />
+</Problem>
+
+<Problem n={2} title="A start or an end">
+Design a nondeterministic machine that accepts exactly the strings that begin
+with `11` or end in `00`.
+<Tests accept={["11", "110", "00", "100", "1100", "0100"]} reject={["", "0", "1", "01", "10", "101", "0110"]} />
+<MachineBuilder client:visible nondeterministic language="two-cases/starts-11-or-ends-00" />
+</Problem>
+
+<Problem n={3} title="Two or three">
+Design a nondeterministic machine that accepts exactly the strings whose length is
+a multiple of 2 or a multiple of 3.
+<Tests accept={["", "00", "000", "0000", "1111", "101010"]} reject={["0", "1", "10101", "11111", "0000000"]} />
+<MachineBuilder client:visible nondeterministic language="two-cases/two-or-three" />
+</Problem>

@@ -282,3 +282,120 @@ export function targetOf(lang: { alphabet: Sym[]; accepts: (s: string) => boolea
   const dfa = minimalDfa(small, lang.accepts, lang.bound ?? 8);
   return { dfa, alphabet: small, index: (a) => (lang.relevant!.includes(a) ? lang.relevant!.indexOf(a) : small.length - 1) };
 }
+
+// ---- nondeterministic machines ---------------------------------------------------
+//
+// A nondeterministic builder (MachineBuilder's `nondeterministic` prop) lets
+// a state have several arrows for one symbol, or none. There are no
+// ε-moves. Reading a string, the machine is in a SET of states: the start
+// alone, then after each symbol every state some current state has an arrow
+// to on that symbol. It accepts when the set at the end holds an accepting
+// state. A set that becomes empty stays empty: every way of reading the
+// string has got stuck.
+//
+// `other` keeps its meaning: an arrow labelled `other` reads every symbol
+// that no other arrow leaving the same state reads explicitly. So `other`
+// never adds a second choice for a symbol already written on an arrow from
+// that state. (Two `other` arrows from one state both read the same
+// leftover symbols, which a nondeterministic machine allows.)
+//
+// The check is exact, like compare: breadth-first over pairs (set of the
+// student's states, state of the target), so a wrong machine gets the
+// shortest string it gets wrong. It makes no claim about the fewest states:
+// target.n is the size of the smallest deterministic machine, and an NFA
+// can need far fewer.
+
+export interface NfaSpec {
+  states: string[];                                        // ids, in the order they were added
+  start: string | null;
+  accepting: string[];
+  arrows: Record<string, Partial<Record<Sym, string[]>>>;  // arrows[state][symbol] = every next state, in state order
+}
+
+// The drawing read as a nondeterministic machine. Unlabelled arrows and
+// unknown convention names are still reported. Two arrows for one symbol
+// are not a clash, and a symbol with no arrow is not missing.
+export function nfaFromEdges(
+  states: string[],
+  start: string | null,
+  accepting: string[],
+  edges: DrawnEdge[],
+  alphabet: Sym[],
+  conventions: Record<string, Sym[]> = {},
+): { spec: NfaSpec; unlabeled: number[]; unknown: { edge: number; token: string }[]; expanded: Sym[][] } {
+  const d = specFromEdges(states, start, accepting, edges, alphabet, conventions);
+  const arrows: NfaSpec["arrows"] = Object.fromEntries(states.map((s) => [s, {}]));
+  for (const s of states)
+    for (const a of alphabet) {
+      const to = new Set<string>();
+      edges.forEach((e, i) => { if (e.from === s && d.expanded[i].includes(a)) to.add(e.to); });
+      const next = states.filter((t) => to.has(t));
+      if (next.length) arrows[s][a] = next;
+    }
+  return { spec: { states, start, accepting, arrows }, unlabeled: d.unlabeled, unknown: d.unknown, expanded: d.expanded };
+}
+
+// Every state some state of `set` has an arrow to on `a`, in state order.
+export function stepNfa(m: NfaSpec, set: string[], a: Sym): string[] {
+  const to = new Set<string>();
+  for (const s of set) for (const t of m.arrows[s]?.[a] ?? []) to.add(t);
+  return m.states.filter((t) => to.has(t));
+}
+
+export interface NfaWalk {
+  sets: string[][];          // sets[i] = the states the machine could be in after reading i symbols
+  diedAt: number | null;     // index of the symbol after which no state was left, or null
+  accepted: boolean;
+}
+
+export function runNfa(m: NfaSpec, word: string): NfaWalk {
+  const acc = new Set(m.accepting);
+  let cur: string[] = m.start !== null && m.states.includes(m.start) ? [m.start] : [];
+  const sets: string[][] = [cur];
+  let diedAt: number | null = null;
+  for (let i = 0; i < word.length; i++) {
+    cur = stepNfa(m, cur, word[i]);
+    if (cur.length === 0 && diedAt === null && sets[i].length > 0) diedAt = i;
+    sets.push(cur);
+  }
+  return { sets, diedAt, accepted: cur.some((s) => acc.has(s)) };
+}
+
+// The shortest string (shortest first, then in alphabet order) on which the
+// student's machine and the target disagree, or null if none does.
+export function compareNfa(
+  m: NfaSpec, alphabet: Sym[], target: Dfa, index?: (a: Sym) => number,
+): { word: string; accepts: boolean } | null {
+  if (m.start === null) return null;
+  const acc = new Set(m.accepting);
+  const key = (P: string[], q: number) => `${P.join("\u0001")}|${q}`;
+  const seen = new Set<string>([key([m.start], target.start)]);
+  const queue: { P: string[]; q: number; w: string }[] = [{ P: [m.start], q: target.start, w: "" }];
+  for (let head = 0; head < queue.length; head++) {
+    const { P, q, w } = queue[head];
+    const yes = P.some((s) => acc.has(s));
+    if (yes !== target.accept[q]) return { word: w, accepts: yes };
+    alphabet.forEach((a, k) => {
+      const P2 = stepNfa(m, P, a);
+      const q2 = target.delta[q][index ? index(a) : k];
+      const k2 = key(P2, q2);
+      if (!seen.has(k2)) {
+        seen.add(k2);
+        queue.push({ P: P2, q: q2, w: w + a });
+      }
+    });
+  }
+  return null;
+}
+
+export type NfaCheckResult =
+  | { status: "no-states" }
+  | { status: "wrong"; word: string; accepts: boolean }
+  | { status: "ok"; states: number };
+
+export function checkNfa(m: NfaSpec, alphabet: Sym[], target: Dfa, index?: (a: Sym) => number): NfaCheckResult {
+  if (m.states.length === 0 || m.start === null) return { status: "no-states" };
+  const bad = compareNfa(m, alphabet, target, index);
+  if (bad) return { status: "wrong", word: bad.word, accepts: bad.accepts };
+  return { status: "ok", states: m.states.length };
+}

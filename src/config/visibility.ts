@@ -19,6 +19,7 @@
 export const VISIBLE_CHAPTERS: readonly string[] = [
   "induction",
   "automata",
+  "nondeterminism",
 ];
 
 export const VISIBLE_PAGES: readonly string[] = [
@@ -39,7 +40,13 @@ export const VISIBLE_PAGES: readonly string[] = [
   "automata/numbers",
   "automata/two-conditions",
   "automata/same-language",
-  "automata/deep-end",
+
+  // Nondeterminism (20 Nov 2026): the notes' example NFAs ready to run, and
+  // design problems for nondeterministic machines. No solutions anywhere.
+  "nondeterminism/watch-it-guess",
+  "nondeterminism/last-few-symbols",
+  "nondeterminism/block-inside",
+  "nondeterminism/two-cases",
 ];
 
 export function isChapterVisible(slug: string): boolean {

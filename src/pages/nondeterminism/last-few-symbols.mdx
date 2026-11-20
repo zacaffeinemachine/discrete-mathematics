@@ -1,0 +1,40 @@
+---
+layout: ../../layouts/Chapter.astro
+title: The Last Few Symbols
+order: 2
+chapter: nondeterminism
+chapterTitle: Nondeterminism
+blurb: Rules about the last two or three symbols of the string.
+description: "Design-a-machine problems for nondeterministic machines, on the last few symbols of the input."
+---
+import { Problem, Tests } from "../../components/games/fsm/Problem.tsx";
+import MachineBuilder from "../../components/games/fsm/builder/MachineBuilder.tsx";
+
+In every problem on this page your machine may be nondeterministic. A state may
+have several arrows for the same symbol, or none.
+
+<Problem n={1} title="Two at the end">
+Design a nondeterministic machine that accepts exactly the strings that end in `01`.
+<Tests accept={["01", "001", "101", "1101", "0001"]} reject={["", "0", "1", "10", "011", "0110"]} />
+<MachineBuilder client:visible nondeterministic language="last-few-symbols/ends-01" />
+</Problem>
+
+<Problem n={2} title="Three at the end">
+Design a nondeterministic machine that accepts exactly the strings that end in `110`.
+<Tests accept={["110", "0110", "1110", "10110"]} reject={["", "11", "10", "011", "1100", "1101"]} />
+<MachineBuilder client:visible nondeterministic language="last-few-symbols/ends-110" />
+</Problem>
+
+<Problem n={3} title="Second from the end">
+Design a nondeterministic machine that accepts exactly the strings whose second
+symbol from the end is `1`.
+<Tests accept={["10", "11", "010", "0111", "1110"]} reject={["", "1", "00", "01", "101", "1001"]} />
+<MachineBuilder client:visible nondeterministic language="last-few-symbols/second-from-end" />
+</Problem>
+
+<Problem n={4} title="Third from the end">
+Design a nondeterministic machine that accepts exactly the strings whose third
+symbol from the end is `1`.
+<Tests accept={["100", "101", "0110", "0100", "11111"]} reject={["", "11", "011", "0001", "10011"]} />
+<MachineBuilder client:visible nondeterministic language="last-few-symbols/third-from-end" />
+</Problem>

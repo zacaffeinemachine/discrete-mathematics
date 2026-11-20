@@ -55,26 +55,3 @@ twenty-six of them.
 <Tests accept={["start", "stop", "pause"]} reject={["", "st", "sto", "starts", "stopp", "paus", "startstop"]} />
 <MachineBuilder client:visible language="exact-words/three-words" />
 </Problem>
-
-<Problem n={7} title="A word at the start, anything after" hard alphabet="the 26 lowercase letters">
-Design a machine that accepts exactly the strings that begin with `un`. Draw
-one arrow labelled `other` for "any other letter" rather than drawing twenty-six
-of them.
-<Tests accept={["un", "und", "undo", "unhappy", "unn"]} reject={["", "u", "n", "nu", "sun", "aun"]} />
-<MachineBuilder client:visible language="exact-words/word-at-start" />
-</Problem>
-
-<Problem n={8} title="A word repeated" hard alphabet="{a, b}">
-Design a machine that accepts exactly the strings made by writing `ab`
-some number of times over: the empty string, `ab`, `abab`, `ababab`, and so
-on.
-<Tests accept={["", "ab", "abab", "ababab"]} reject={["a", "b", "ba", "aab", "aba", "abb"]} />
-<MachineBuilder client:visible language="exact-words/word-repeated" />
-</Problem>
-
-<Problem n={9} title="No letter twice in a row" hard alphabet="{a, b}">
-Design a machine that accepts exactly the non-empty strings in which no two
-neighbouring letters are the same.
-<Tests accept={["a", "b", "ab", "ba", "abab", "babab"]} reject={["", "aa", "bb", "ababb", "abba"]} />
-<MachineBuilder client:visible language="exact-words/no-letter-twice" />
-</Problem>

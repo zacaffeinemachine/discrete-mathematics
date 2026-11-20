@@ -27,7 +27,8 @@ import { LANGUAGES } from "../src/components/games/fsm/builder/languages.ts";
 
 const PAGES = [
   "automata/ends-and-beginnings", "automata/counting", "automata/length", "automata/somewhere-inside",
-  "automata/looking-back", "automata/numbers", "automata/two-conditions", "automata/deep-end", "automata/exact-words",
+  "automata/looking-back", "automata/numbers", "automata/two-conditions", "automata/exact-words",
+  "nondeterminism/last-few-symbols", "nondeterminism/block-inside", "nondeterminism/two-cases",
 ];
 
 const specOf = (d: Dfa, alphabet: string[]): MachineSpec => {

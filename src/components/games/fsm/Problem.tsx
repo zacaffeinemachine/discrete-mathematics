@@ -16,8 +16,6 @@ export function Problem({
   n,
   title,
   alphabet = "{0, 1}",
-  hard = false,
-  optional = false,
   children,
 }: {
   n: number;
@@ -25,20 +23,18 @@ export function Problem({
   // Every problem says what its machine reads. It defaults to binary
   // because most of them are, never because it is optional.
   alphabet?: string;
-  hard?: boolean;
-  // Beyond what the course asks for (author decision, 19 Nov 2026). Every
-  // harder problem is optional, so `hard` implies it.
-  optional?: boolean;
+  // No `hard` or `optional` flag: problems beyond the level of the course's
+  // assessments were removed from the site on 20 Nov 2026 (author decision),
+  // so every problem here is one the course expects a student to do.
   children: ReactNode;
 }) {
-  const isOptional = optional || hard;
   return (
     <div
       style={{
         margin: "20px 0",
         padding: "14px 18px 16px",
         border: "1px solid var(--rule)",
-        borderLeft: `4px solid ${hard ? "var(--ink)" : "var(--accent)"}`,
+        borderLeft: "4px solid var(--accent)",
         borderRadius: 4,
         background: "var(--surface)",
       }}
@@ -63,36 +59,6 @@ export function Problem({
         >
           {n}. {title}
         </span>
-        {isOptional && (
-          <span
-            style={{
-              fontSize: 10,
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-              padding: "1px 7px",
-              borderRadius: 999,
-              border: "1px solid var(--muted)",
-              color: "var(--muted)",
-            }}
-          >
-            optional
-          </span>
-        )}
-        {hard && (
-          <span
-            style={{
-              fontSize: 10,
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-              padding: "1px 7px",
-              borderRadius: 999,
-              border: "1px solid var(--ink)",
-              color: "var(--ink)",
-            }}
-          >
-            harder
-          </span>
-        )}
         <span style={{ fontSize: 12, color: "var(--muted)" }}>
           alphabet <code style={{ fontFamily: MONO }}>{alphabet}</code>
         </span>

@@ -27,12 +27,27 @@
 // gets wrong onto the tape. The look is deliberately neutral: ink and greys,
 // with colour only in the verdict boxes.
 //
-// Work is saved in localStorage under dm.automata.v1:<page>:<id>.
+// Two optional modes (see SITE_OVERVIEW.md, *Nondeterministic and free
+// builders*):
+//   nondeterministic  a state may have several arrows for one symbol, or none.
+//                     The tape runs the machine as a set of states, with an orb
+//                     on each and one running along every arrow taken, and
+//                     Check compares the language exactly (compareNfa) but says
+//                     nothing about the fewest states: the smallest
+//                     deterministic machine is not the smallest NFA.
+//   free              a sandbox with no language and no Check, over `alphabet`.
+// `preset` is a drawn machine loaded when nothing is saved, and Reset goes
+// back to it.
+//
+// Work is saved in localStorage under dm.automata.v1:<page>:<id>, and in the
+// other modes under dm.automata.v1:<page>:nfa:<id>, :free:<id> or
+// :free:nfa:<id>, so a builder in another mode never reads or overwrites a
+// deterministic save.
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { usePersistent } from "../../shared/storage";
 import { AuthorError, Button, Row, Status } from "../../shared/ui";
-import { OTHER, compare, missingArrows, parseConvention, parseLabel, runMachine, specFromEdges, targetOf, type DrawnEdge } from "./engine";
+import { OTHER, compare, compareNfa, missingArrows, nfaFromEdges, parseConvention, parseLabel, runMachine, runNfa, specFromEdges, targetOf, type DrawnEdge } from "./engine";
 import { R, START_LEN, angleThrough, bendThrough, distToSamples, layoutEdges, type Pt } from "./geometry";
 import { LANGUAGES } from "./languages";
 import { MSG } from "./messages";
@@ -70,10 +85,22 @@ const reducedMotion = () =>
   typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
 export interface MachineBuilderProps {
-  id?: string;           // unique on the page; defaults to the language key
-  language: string;      // a key of LANGUAGES in languages.ts
+  id?: string;           // unique on the page; defaults to the language key ("free" in a sandbox)
+  language?: string;     // a key of LANGUAGES in languages.ts; required unless `free`
   width?: number;        // logical canvas width (default 600)
   height?: number;       // starting height (default 300); the student can drag it taller
+  nondeterministic?: boolean;   // allow several arrows for one symbol, or none (no ε-moves)
+  free?: boolean;        // a sandbox: no language, no Check
+  alphabet?: string[];   // the alphabet of a sandbox (default 0, 1); a language brings its own
+  preset?: Preset;       // a machine drawn on arrival when nothing is saved; Reset returns to it
+}
+
+// A given example machine, not a solution: no page may preset the answer to
+// one of its own problems.
+export interface Preset {
+  states: { id: string; name: string; x: number; y: number; accepting: boolean }[];
+  start: string;
+  edges: { from: string; to: string; label: string[]; bend?: number; angle?: number }[];
 }
 
 interface BState { id: string; name: string; x: number; y: number; accepting: boolean }
@@ -104,9 +131,12 @@ const sameTarget = (a: Target | null, b: Target) =>
   !!a && a.kind === b.kind && (a.kind === "state" ? a.id === (b as { id: string }).id : a.index === (b as { index: number }).index);
 
 export default function MachineBuilder(props: MachineBuilderProps) {
-  const lang = LANGUAGES[props.language];
-  const id = props.id ?? props.language;
-  const alphabet = lang?.alphabet ?? ["0", "1"];
+  const lang = props.language !== undefined ? LANGUAGES[props.language] : undefined;
+  const nondet = !!props.nondeterministic;
+  const free = !!props.free;
+  const id = props.id ?? props.language ?? "free";
+  const storeId = [free ? "free" : "", nondet ? "nfa" : "", id].filter((x) => x !== "").join(":");
+  const alphabet = lang?.alphabet ?? props.alphabet ?? ["0", "1"];
   const small = alphabet.length <= 3;
   // What the student types on the tape, kept to the alphabet (capitals are
   // read as lower case when only lower case is in the alphabet).
@@ -114,7 +144,9 @@ export default function MachineBuilder(props: MachineBuilderProps) {
     [...w].map((c) => (alphabet.includes(c) ? c : alphabet.includes(c.toLowerCase()) ? c.toLowerCase() : "")).join("").slice(0, MAX_WORD);
 
   // ---- saved state ----
-  const fresh = (): Saved => ({ design: emptyDesign(), word: "", solved: false, height: null, colour: false, view: null });
+  const fresh = (): Saved => ({ design: presetDesign(), word: "", solved: false, height: null, colour: false, view: null });
+  const presetDesign = (): Design =>
+    (props.preset && revive({ design: { ...props.preset, conventions: [] }, word: "" })?.design) || emptyDesign();
   const revive = (s: unknown): Saved | null => {
     const v = s as Saved;
     if (!v || !v.design || !Array.isArray(v.design.states) || !Array.isArray(v.design.edges)) return null;
@@ -143,7 +175,7 @@ export default function MachineBuilder(props: MachineBuilderProps) {
       ? { cx: vw.cx, cy: vw.cy, z: Math.min(Z_MAX, Math.max(Z_MIN, vw.z)) } : null;
     return { design: { states, start, edges, conventions }, word, solved: !!v.solved, height, colour: !!v.colour, view };
   };
-  const [saved, setSaved, resetSaved] = usePersistent<Saved>(id, "machine-v2", fresh, revive, STORE);
+  const [saved, setSaved, resetSaved] = usePersistent<Saved>(storeId, "machine-v2", fresh, revive, STORE);
   const design = saved.design;
   const word = saved.word;
 
@@ -208,11 +240,25 @@ export default function MachineBuilder(props: MachineBuilderProps) {
   );
   const drawing = useMemo(() => layoutEdges(design.states, design.edges, design.start), [design]);
   const walk = useMemo(() => runMachine(built.spec, word), [built, word]);
+  // The nondeterministic reading: the same drawing as a machine whose arrows
+  // lead to sets of states, and the set it could be in after each prefix.
+  const nspec = useMemo(
+    () => (nondet ? nfaFromEdges(design.states.map((q) => q.id), design.start, design.states.filter((q) => q.accepting).map((q) => q.id), design.edges, alphabet, convMap).spec : null),
+    [nondet, design, alphabet.join(""), convMap],
+  );
+  const nwalk = useMemo(() => (nspec ? runNfa(nspec, word) : null), [nspec, word]);
+  // The arrows taken on the step into position k: from every state the
+  // machine could be in, every arrow that reads the symbol.
+  const takenInto = (k: number): number[] => {
+    if (!nwalk || k <= 0 || k > word.length) return [];
+    const prev = new Set(nwalk.sets[k - 1]);
+    return design.edges.map((e, i) => (prev.has(e.from) && (built.expanded[i] ?? []).includes(word[k - 1]) ? i : -1)).filter((i) => i >= 0);
+  };
   // Built on the first Check, not on load: the largest problems take a
   // noticeable fraction of a second.
   const targetRef = useRef<{ key: string; t: ReturnType<typeof targetOf> } | null>(null);
   const getTarget = () => {
-    if (!lang) return null;
+    if (!lang || props.language === undefined) return null;
     if (targetRef.current?.key !== props.language) targetRef.current = { key: props.language, t: targetOf(lang) };
     return targetRef.current.t;
   };
@@ -523,7 +569,7 @@ export default function MachineBuilder(props: MachineBuilderProps) {
   // Play: walk the tape one symbol at a time.
   useEffect(() => {
     if (!playing) return;
-    if (pos >= word.length) { setPlaying(false); return; }
+    if (pos >= word.length || (nwalk && nwalk.diedAt !== null && pos > nwalk.diedAt)) { setPlaying(false); return; }
     const t = setTimeout(() => { stepTo.current = pos + 1; setPos(pos + 1); }, 600);
     return () => clearTimeout(t);
   }, [playing, pos, word]);
@@ -535,35 +581,51 @@ export default function MachineBuilder(props: MachineBuilderProps) {
   // in the live state. A layout effect, so the first frame of the run is drawn
   // before the browser paints the new position: no flash of the orb at the end.
   const stepTo = useRef<number | null>(null);
-  const [orbRun, setOrbRun] = useState<{ x: number; y: number; r: number; from: string } | null>(null);
+  // A nondeterministic machine runs one orb along every arrow taken, all
+  // together; `from` holds every state they left.
+  const [orbRun, setOrbRun] = useState<{ orbs: Pt[]; r: number; from: string[] } | null>(null);
   useLayoutEffect(() => {
     const want = stepTo.current;
     stepTo.current = null;
-    if (want !== pos || pos === 0 || (walk.stuckAt !== null && pos > walk.stuckAt)) return;
-    const from = walk.path[pos - 1], to = walk.path[pos];
-    const k = design.edges.findIndex((e, i) => e.from === from && e.to === to && (built.expanded[i] ?? []).includes(word[pos - 1]));
-    const arrow = drawing.find((a) => a.index === k);
-    const P = from ? stateById.get(from) : undefined, Q = to ? stateById.get(to) : undefined;
-    if (!arrow || !P || !Q || !from || reducedMotion()) return;
-    // The route: out of the centre of P, along the arrow, into the centre of Q,
-    // measured by arc length so the orb moves at an even pace.
-    const pts: Pt[] = [P, ...arrow.samples, Q];
-    const cum = [0];
-    for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y));
-    const total = cum[cum.length - 1] || 1;
+    if (want !== pos || pos === 0) return;
+    // Each route: out of the centre of P, along the arrow, into the centre of
+    // Q, measured by arc length so the orb moves at an even pace.
+    const routes: { pts: Pt[]; cum: number[] }[] = [];
+    let from: string[];
+    const route = (k: number) => {
+      const e = design.edges[k];
+      const arrow = drawing.find((a) => a.index === k);
+      const P = e ? stateById.get(e.from) : undefined, Q = e ? stateById.get(e.to) : undefined;
+      if (!arrow || !P || !Q) return;
+      const pts: Pt[] = [P, ...arrow.samples, Q];
+      const cum = [0];
+      for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y));
+      routes.push({ pts, cum });
+    };
+    if (nwalk) {
+      from = nwalk.sets[pos - 1] ?? [];
+      takenInto(pos).forEach(route);
+      if (routes.length === 0 || reducedMotion()) return;
+    } else {
+      if (walk.stuckAt !== null && pos > walk.stuckAt) return;
+      const f = walk.path[pos - 1], to = walk.path[pos];
+      const k = design.edges.findIndex((e, i) => e.from === f && e.to === to && (built.expanded[i] ?? []).includes(word[pos - 1]));
+      if (k < 0 || !f || !to || reducedMotion()) return;
+      route(k);
+      if (routes.length === 0) return;
+      from = [f];
+    }
     const at = (t: number) => {
       const e = t < 0.5 ? 2 * t * t : 1 - 2 * (1 - t) * (1 - t);         // ease in and out
-      const s = e * total;
-      let i = 1;
-      while (i < pts.length - 1 && cum[i] < s) i++;
-      const f = (s - cum[i - 1]) / (cum[i] - cum[i - 1] || 1);
       const grow = Math.min(1, Math.min(t, 1 - t) / 0.2);               // 0 at either end, 1 on the wire
-      return {
-        x: pts[i - 1].x + (pts[i].x - pts[i - 1].x) * f,
-        y: pts[i - 1].y + (pts[i].y - pts[i - 1].y) * f,
-        r: ORB_REST - (ORB_REST - ORB_RUN) * grow,
-        from,
-      };
+      const orbs = routes.map(({ pts, cum }) => {
+        const s = e * (cum[cum.length - 1] || 1);
+        let i = 1;
+        while (i < pts.length - 1 && cum[i] < s) i++;
+        const f = (s - cum[i - 1]) / (cum[i] - cum[i - 1] || 1);
+        return { x: pts[i - 1].x + (pts[i].x - pts[i - 1].x) * f, y: pts[i - 1].y + (pts[i].y - pts[i - 1].y) * f };
+      });
+      return { orbs, r: ORB_REST - (ORB_REST - ORB_RUN) * grow, from };
     };
     setOrbRun(at(0));
     const t0 = performance.now();
@@ -588,7 +650,21 @@ export default function MachineBuilder(props: MachineBuilderProps) {
     if (!design.start) v = no(MSG.noStart);
     else if (built.unlabeled.length) v = no(MSG.unlabeled(built.unlabeled.length), built.unlabeled);
     else if (built.unknown.length) v = no(MSG.unknownName(built.unknown[0].token), built.unknown.map((u) => u.edge));
-    else if (built.clashes.length) {
+    else if (nspec) {
+      // Nondeterministic: no clash and no missing arrow to report. On a
+      // correct machine nothing is said about the fewest states, since
+      // target.dfa.n counts deterministic states.
+      const bad = compareNfa(nspec, alphabet, target.dfa, target.index);
+      if (bad) {
+        v = { ...no(MSG.wrong(bad.word, bad.accepts)), wrong: bad };
+        setSaved((s) => ({ ...s, word: bad.word }));
+        setPos(bad.word.length);
+        setPlaying(false);
+      } else {
+        v = { tone: "right", text: MSG.right, edges: [], states: [] };
+        setSaved((s) => ({ ...s, solved: true }));
+      }
+    } else if (built.clashes.length) {
       const c = built.clashes[0];
       v = no(MSG.clash(nameOf(c.state), c.symbol), built.clashes.flatMap((x) => x.edges));
     } else {
@@ -618,24 +694,42 @@ export default function MachineBuilder(props: MachineBuilderProps) {
   };
 
   // ---- author errors ----
-  if (!lang) return <AuthorError>MachineBuilder: no language "{props.language}" in fsm/builder/languages.ts.</AuthorError>;
+  if (props.language !== undefined && !lang) return <AuthorError>MachineBuilder: no language "{props.language}" in fsm/builder/languages.ts.</AuthorError>;
+  if (!lang && !free) return <AuthorError>MachineBuilder: give a language, or set free for a sandbox.</AuthorError>;
 
   // ---- what to highlight ----
   const current = walk.path[Math.min(pos, walk.path.length - 1)] ?? null;
   const stuckNow = walk.stuckAt !== null && pos > walk.stuckAt;
+  // Nondeterministic: the set it could be in now, and whether it has died.
+  const nowSet = nwalk ? nwalk.sets[Math.min(pos, nwalk.sets.length - 1)] ?? [] : [];
+  const deadNow = !!nwalk && nwalk.diedAt !== null && pos > nwalk.diedAt;
+  const activeEdges = new Set(nwalk ? takenInto(pos) : []);
   const activeEdge = (() => {
+    if (nwalk) return -1;
     if (pos === 0 || stuckNow) return -1;
     const from = walk.path[pos - 1], to = walk.path[pos];
     return design.edges.findIndex((e, i) => e.from === from && e.to === to && (built.expanded[i] ?? []).includes(word[pos - 1]));
   })();
   const markEdges = new Set(verdict?.edges ?? []);
   const markStates = new Set(verdict?.states ?? []);
-  const endMark = verdict?.wrong && word === verdict.wrong.word && pos === word.length && current
+  // Not drawn for a nondeterministic machine: it ends in a set, possibly
+  // empty, and marking one state of it would point at the wrong place.
+  const endMark = !nwalk && verdict?.wrong && word === verdict.wrong.word && pos === word.length && current
     ? { state: current, text: MSG.shouldEnd(!verdict.wrong.accepts) }
     : null;
 
   const tapeLine = (() => {
     if (!design.start) return MSG.noStart;
+    if (nwalk) {
+      if (deadNow) return MSG.nDead(pos, word.length);
+      const names = nowSet.map(nameOf);
+      const acc = nowSet.filter((sid) => stateById.get(sid)?.accepting).map(nameOf);
+      const ends = acc.length ? MSG.nEndAccept(names, acc) : MSG.nEndReject(names);
+      if (word.length === 0) return `${MSG.emptyWord} ${ends}`;
+      if (pos === 0) return MSG.atStart(names[0] ?? "?");
+      if (pos < word.length) return MSG.nMidway(pos, word.length, names);
+      return ends;
+    }
     if (stuckNow) {
       const s = walk.path[walk.stuckAt!]!, a = word[walk.stuckAt!];
       const two = design.edges.filter((e, i) => e.from === s && (built.expanded[i] ?? []).includes(a)).length > 1;
@@ -648,8 +742,10 @@ export default function MachineBuilder(props: MachineBuilderProps) {
     if (pos < word.length) return MSG.midway(pos, word.length, here);
     return ends;
   })();
-  const verdictTone: "right" | "wrong" | null =
-    !design.start || pos < word.length || word.length === 0 ? null : stuckNow ? "wrong" : stateById.get(current ?? "")?.accepting ? "right" : "wrong";
+  const verdictTone: "right" | "wrong" | null = nwalk
+    ? (!design.start ? null : deadNow ? "wrong" : pos < word.length || word.length === 0 ? null
+      : nowSet.some((sid) => stateById.get(sid)?.accepting) ? "right" : "wrong")
+    : !design.start || pos < word.length || word.length === 0 ? null : stuckNow ? "wrong" : stateById.get(current ?? "")?.accepting ? "right" : "wrong";
 
   const selState = sel?.kind === "state" ? stateById.get(sel.id) : undefined;
   const hint =
@@ -657,7 +753,7 @@ export default function MachineBuilder(props: MachineBuilderProps) {
       : moveAll ? MSG.moveAllHint
       : selState ? MSG.stateSelected(selState.name)
       : sel?.kind === "edge" ? MSG.edgeSelected
-      : small ? MSG.hint : MSG.hintLarge;
+      : small ? (nondet ? MSG.hintNfa : MSG.hint) : MSG.hintLarge;
 
   // Where the editor box goes, in pixels inside the wrapper.
   const editorAt = (() => {
@@ -689,7 +785,7 @@ export default function MachineBuilder(props: MachineBuilderProps) {
         <Button onClick={deleteSel} disabled={!sel}>Delete</Button>
         <Button onClick={doUndo} disabled={undo.current.length === 0}>Undo</Button>
         <Button onClick={reset}>Reset</Button>
-        <Button main onClick={check}>Check</Button>
+        {!free && <Button main onClick={check}>Check</Button>}
       </Row>
 
       {showConventions && (
@@ -779,7 +875,7 @@ export default function MachineBuilder(props: MachineBuilderProps) {
           {/* arrows */}
           {drawing.map((a) => {
             const isSel = sel?.kind === "edge" && sel.index === a.index;
-            const isActive = activeEdge === a.index;
+            const isActive = activeEdge === a.index || activeEdges.has(a.index);
             const bad = markEdges.has(a.index);
             const e = design.edges[a.index];
             const cols = colourOn && !bad ? edgeColours(a.index) : [];
@@ -817,7 +913,7 @@ export default function MachineBuilder(props: MachineBuilderProps) {
           {/* states */}
           {design.states.map((q) => {
             // While the orb runs, the state it left stays lit until it arrives.
-            const lit = (orbRun ? orbRun.from === q.id : current === q.id && !stuckNow) && !!design.start;
+            const lit = (orbRun ? orbRun.from.includes(q.id) : nwalk ? nowSet.includes(q.id) : current === q.id && !stuckNow) && !!design.start;
             const orbHere = lit && !orbRun;
             const isSel = sel?.kind === "state" && sel.id === q.id;
             const bad = markStates.has(q.id);
@@ -863,10 +959,10 @@ export default function MachineBuilder(props: MachineBuilderProps) {
           })}
 
           {/* the orb on its way, over everything */}
-          {orbRun && (
-            <circle cx={orbRun.x} cy={orbRun.y} r={orbRun.r} fill={`url(#${orbId}-run)`}
+          {orbRun && orbRun.orbs.map((o, k) => (
+            <circle key={k} cx={o.x} cy={o.y} r={orbRun.r} fill={`url(#${orbId}-run)`}
               stroke="var(--accent-deep)" strokeWidth={1} style={{ pointerEvents: "none" }} data-orb="run" />
-          )}
+          ))}
         </svg>
 
         {/* view controls, in the corner of the canvas */}
@@ -978,7 +1074,7 @@ export default function MachineBuilder(props: MachineBuilderProps) {
       {/* readout */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: 14, fontSize: 13, marginTop: 4, alignItems: "baseline" }}>
         <span>States: <strong>{design.states.length}</strong></span>
-        {saved.solved && (
+        {saved.solved && !free && (
           <span style={{ fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", padding: "1px 8px", borderRadius: 999, border: `1px solid ${RIGHT}`, color: RIGHT }}>
             solved
           </span>
@@ -1011,7 +1107,7 @@ export default function MachineBuilder(props: MachineBuilderProps) {
           </label>
           <Button onClick={() => { setPlaying(false); setPos(0); }} disabled={pos === 0}>Start</Button>
           <Button onClick={() => { setPlaying(false); setPos((p) => Math.max(0, p - 1)); }} disabled={pos === 0}>Back</Button>
-          <Button onClick={() => { setPlaying(false); if (pos < word.length) { stepTo.current = pos + 1; setPos(pos + 1); } }} disabled={pos >= word.length}>Step</Button>
+          <Button onClick={() => { setPlaying(false); if (pos < word.length) { stepTo.current = pos + 1; setPos(pos + 1); } }} disabled={pos >= word.length || deadNow}>Step</Button>
           <Button onClick={() => { if (playing) setPlaying(false); else { setPos(0); setPlaying(true); } }} disabled={word.length === 0}>
             {playing ? "Pause" : "Play"}
           </Button>
@@ -1045,6 +1141,20 @@ export default function MachineBuilder(props: MachineBuilderProps) {
         <div style={{ marginTop: 8, fontSize: 13, color: verdictTone === "right" ? RIGHT : verdictTone === "wrong" ? WRONG : INK, fontWeight: verdictTone ? 600 : 400 }}>
           {tapeLine}
         </div>
+        {nwalk && design.start && (
+          <div style={{ marginTop: 8, fontSize: 12.5, color: MUTED }} aria-label={MSG.historyTitle} title={MSG.historyTitle} data-history="">
+            <span style={{ letterSpacing: "0.04em", marginRight: 6 }}>{MSG.historyLabel}</span>
+            <span style={{ display: "inline-flex", flexWrap: "wrap", gap: "3px 12px", fontFamily: MONO }}>
+              {nwalk.sets.slice(0, pos + 1).map((set, k) => (
+                <span key={k} style={{ color: k === pos ? INK : MUTED, fontWeight: k === pos ? 600 : 400, whiteSpace: "nowrap" }}>
+                  <span title={k === 0 ? MSG.emptyPrefix : undefined}>{k === 0 ? "ε" : word.slice(0, k)}</span>
+                  {" → "}
+                  {set.length ? `{${set.map(nameOf).join(", ")}}` : "∅"}
+                </span>
+              ))}
+            </span>
+          </div>
+        )}
       </div>
 
     </div>

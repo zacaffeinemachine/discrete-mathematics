@@ -1,0 +1,39 @@
+---
+layout: ../../layouts/Chapter.astro
+title: Watch a Machine Guess
+order: 1
+chapter: nondeterminism
+chapterTitle: Nondeterminism
+blurb: Two machines from the notes, already drawn, and an empty canvas. Type a string and follow every way of reading it at once.
+description: "Run nondeterministic machines from the notes on any string, and build your own."
+---
+import MachineBuilder from "../../components/games/fsm/builder/MachineBuilder.tsx";
+import { THIRD_FROM_END, METRO } from "../../components/games/fsm/nfaPresets.ts";
+
+A nondeterministic machine may have several arrows leaving a state with the same
+symbol, or none. So after reading part of a string it may be in any one of several
+states. The canvases on this page mark every state the machine could be in. When
+you step, a dot runs along every arrow the machine could take.
+
+## The third symbol from the end
+
+This is the machine N₃ from the notes, over the alphabet `{0, 1}`. Its start state
+is q0 and its accepting state is q3. Type a string and step through it. You can
+also change the machine.
+
+<MachineBuilder client:visible id="watch/third-from-end" free nondeterministic alphabet={["0", "1"]} preset={THIRD_FROM_END} />
+
+## The metro
+
+This is the metro map from the notes, read as a machine over the alphabet `{r, b}`.
+A friend gets on at C, and each symbol of a message is one stop on the red line r
+or on the blue line b. There is a café at Q, so Q is the accepting state. Type a
+message and step through it.
+
+<MachineBuilder client:visible id="watch/metro" free nondeterministic alphabet={["r", "b"]} preset={METRO} />
+
+## Your own machine
+
+An empty canvas over the alphabet `{0, 1}`. Draw any machine you like and run it.
+
+<MachineBuilder client:visible id="watch/own" free nondeterministic alphabet={["0", "1"]} />

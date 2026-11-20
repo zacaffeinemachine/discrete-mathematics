@@ -3,6 +3,7 @@
 
 const show = (w: string) => (w === "" ? "the empty string" : w);
 const list = (xs: string[]) => (xs.length <= 1 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}`);
+const orList = (xs: string[]) => (xs.length <= 1 ? xs.join("") : `${xs.slice(0, -1).join(", ")} or ${xs[xs.length - 1]}`);
 
 export const MSG = {
   // Check.
@@ -82,4 +83,22 @@ export const MSG = {
   stuckNone: (s: string, a: string) => `${s} has no arrow for ${a}, so the machine cannot go on.`,
   stuckTwo: (s: string, a: string) => `${s} has two arrows for ${a}, so the machine cannot choose.`,
   emptyWord: "The empty string: the machine reads nothing and stays at the start.",
+
+  // The tape, for a nondeterministic machine: it is in a set of states.
+  nMidway: (k: number, n: number, set: string[]) =>
+    set.length === 1 ? `Read ${k} of ${n}. The machine could only be in ${set[0]}.` : `Read ${k} of ${n}. The machine could be in ${orList(set)}.`,
+  nDead: (k: number, n: number) =>
+    `${k < n ? `Read ${k} of ${n}. ` : ""}No state is left: every way of reading this string has got stuck. Rejected.`,
+  nEndAccept: (set: string[], acc: string[]) =>
+    set.length === 1
+      ? `It could only end in ${set[0]}, which is accepting. Accepted.`
+      : `It could end in ${orList(set)}. ${list(acc)} ${acc.length === 1 ? "is" : "are"} accepting. Accepted.`,
+  nEndReject: (set: string[]) =>
+    set.length === 1
+      ? `It could only end in ${set[0]}, which is not accepting. Rejected.`
+      : `It could end in ${orList(set)}, and none of them is accepting. Rejected.`,
+  historyLabel: "Where it could be",
+  historyTitle: "The states the machine could be in after reading each beginning of the string",
+  emptyPrefix: "the empty string",
+  hintNfa: "Click a state and then another to draw an arrow. A state may have several arrows for one symbol, or none. Double-click a state to rename it, or an arrow to label it. Drag a state to move it, an arrow to bend it, or empty space to move the view.",
 } as const;

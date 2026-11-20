@@ -17,6 +17,9 @@ done
 node --experimental-strip-types --no-warnings=ExperimentalWarning --test \
   --test-reporter=dot scripts/test-machines.ts || status=1
 
+# The nondeterministic builder: sets of states, and the exact NFA check.
+node --experimental-strip-types --no-warnings=ExperimentalWarning scripts/test-nfa.ts || status=1
+
 mkdir -p .testbuild
 ./node_modules/.bin/esbuild scripts/test-widgets.tsx \
   --bundle --platform=node --format=esm --jsx=automatic \

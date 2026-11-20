@@ -44,6 +44,6 @@ import { L as looking_back } from "./languages/looking-back.ts";
 import { L as exact_words } from "./languages/exact-words.ts";
 import { L as numbers } from "./languages/numbers.ts";
 import { L as two_conditions } from "./languages/two-conditions.ts";
-import { L as deep_end } from "./languages/deep-end.ts";
+import { L as nondeterminism } from "./languages/nondeterminism.ts";
 
-export const LANGUAGES: Record<string, Language> = { ...ends_and_beginnings, ...counting, ...length, ...somewhere_inside, ...looking_back, ...exact_words, ...numbers, ...two_conditions, ...deep_end };
+export const LANGUAGES: Record<string, Language> = { ...ends_and_beginnings, ...counting, ...length, ...somewhere_inside, ...looking_back, ...exact_words, ...numbers, ...two_conditions, ...nondeterminism };
