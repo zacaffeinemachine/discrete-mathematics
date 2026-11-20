@@ -40,21 +40,21 @@ Design a machine that accepts exactly the strings in which every `0` comes befor
 <MachineBuilder client:visible language="ends-and-beginnings/zeros-first" />
 </Problem>
 
-<Problem n={6} title="Never leave a 0 hanging">
+<Problem n={6} title="Never leave a 0 hanging" optional>
 Design a machine that accepts exactly the strings in which every `0` is
 immediately followed by a `1`.
 <Tests accept={["", "1", "01", "1101", "010101"]} reject={["0", "10", "1001", "0110"]} />
 <MachineBuilder client:visible language="ends-and-beginnings/zero-then-one" />
 </Problem>
 
-<Problem n={7} title="Never let a 1 arrive alone">
+<Problem n={7} title="Never let a 1 arrive alone" optional>
 Design a machine that accepts exactly the strings in which every `1` is
 immediately preceded by a `0`.
 <Tests accept={["", "0", "01", "0101", "0010"]} reject={["1", "10", "011", "0011"]} />
 <MachineBuilder client:visible language="ends-and-beginnings/one-after-zero" />
 </Problem>
 
-<Problem n={8} title="Three at the end">
+<Problem n={8} title="Three at the end" optional>
 Design a machine that accepts exactly the strings that end in `010`.
 <Tests accept={["010", "0010", "1010", "01010"]} reject={["01", "0100", "10", "0110"]} />
 <MachineBuilder client:visible language="ends-and-beginnings/ends-010" />

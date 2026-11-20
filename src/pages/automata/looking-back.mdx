@@ -24,14 +24,14 @@ last two symbols are different.
 <MachineBuilder client:visible language="looking-back/last-two-differ" />
 </Problem>
 
-<Problem n={3} title="Three of a kind at the end">
+<Problem n={3} title="Three of a kind at the end" optional>
 Design a machine that accepts exactly the strings of length at least 3 whose last three symbols are
 all the same.
 <Tests accept={["000", "111", "0111", "1000", "010000"]} reject={["", "11", "011", "0110", "1101"]} />
 <MachineBuilder client:visible language="looking-back/three-of-a-kind" />
 </Problem>
 
-<Problem n={4} title="Third from the end">
+<Problem n={4} title="Third from the end" optional>
 Design a machine that accepts exactly the strings of length at least 3 whose third-to-last symbol
 is a `1`.
 <Tests accept={["100", "101", "110", "111", "01101"]} reject={["", "1", "11", "000", "0011"]} />

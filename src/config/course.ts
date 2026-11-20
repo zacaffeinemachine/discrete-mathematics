@@ -25,6 +25,7 @@ export const TEACHING_FELLOWS: readonly string[] = ["Anirban Bhattacharjee"];
 export const TEACHING_ASSISTANTS: readonly string[] = [
   "Akhilesh Balaji",
   "Mannan Gupta",
+  "Shambhavi Sastry",
 ];
 
 /** Room number of the instructor's office. */

@@ -17,6 +17,7 @@ export function Problem({
   title,
   alphabet = "{0, 1}",
   hard = false,
+  optional = false,
   children,
 }: {
   n: number;
@@ -25,8 +26,12 @@ export function Problem({
   // because most of them are, never because it is optional.
   alphabet?: string;
   hard?: boolean;
+  // Beyond what the course asks for (author decision, 19 Nov 2026). Every
+  // harder problem is optional, so `hard` implies it.
+  optional?: boolean;
   children: ReactNode;
 }) {
+  const isOptional = optional || hard;
   return (
     <div
       style={{
@@ -58,6 +63,21 @@ export function Problem({
         >
           {n}. {title}
         </span>
+        {isOptional && (
+          <span
+            style={{
+              fontSize: 10,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              padding: "1px 7px",
+              borderRadius: 999,
+              border: "1px solid var(--muted)",
+              color: "var(--muted)",
+            }}
+          >
+            optional
+          </span>
+        )}
         {hard && (
           <span
             style={{

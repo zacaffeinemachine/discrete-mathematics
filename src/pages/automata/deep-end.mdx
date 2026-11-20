@@ -4,13 +4,13 @@ title: The Deep End
 order: 10
 chapter: automata
 chapterTitle: Automata
-blurb: Ten problems that need an idea before they need a diagram. Every one of them can be done, and none of them can be done by staring.
+blurb: Ten problems that need an idea before they need a diagram. Every one of them can be done, and none of them can be done by staring. All of them are optional.
 description: "The hardest design-a-machine problems in the chapter, all of them solvable."
 ---
 import { Problem, Tests } from "../../components/games/fsm/Problem.tsx";
 import MachineBuilder from "../../components/games/fsm/builder/MachineBuilder.tsx";
 
-<Problem n={1} title="Scattered, not consecutive">
+<Problem n={1} title="Scattered, not consecutive" optional>
 Design a machine that accepts exactly the strings in which you can find a `0`,
 then a `1` somewhere after it, then a `0` somewhere after that, then a `1`
 somewhere after that. The four symbols need not be next to one another, and
@@ -19,7 +19,7 @@ anything at all may sit between them.
 <MachineBuilder client:visible language="deep-end/scattered-not-consecutive" />
 </Problem>
 
-<Problem n={2} title="Overlaps count">
+<Problem n={2} title="Overlaps count" optional>
 Count how many times `11` appears in the string, counting a fresh appearance
 at every position where it fits. Under that counting `111` contains two of
 them and `1111` contains three.
@@ -29,7 +29,7 @@ Design a machine that accepts exactly the strings in which that count is even.
 <MachineBuilder client:visible language="deep-end/overlaps-count" />
 </Problem>
 
-<Problem n={3} title="Even gaps between the ones">
+<Problem n={3} title="Even gaps between the ones" optional>
 Design a machine that accepts exactly the strings in which every stretch of
 `0`s lying **between** two `1`s has even length. A stretch of `0`s before the
 first `1`, or after the last `1`, is not between two `1`s and is not
@@ -38,7 +38,7 @@ restricted. A string with no `1`s in it is accepted.
 <MachineBuilder client:visible language="deep-end/even-gaps" />
 </Problem>
 
-<Problem n={4} title="One rule for each letter" alphabet="{x, y}">
+<Problem n={4} title="One rule for each letter" alphabet="{x, y}" optional>
 A block is one unbroken stretch of a single letter, taken as long as it will
 go. The string `xxyyyxx` is a block of `x` of length 2, then a block of `y` of
 length 3, then a block of `x` of length 2.
@@ -51,7 +51,7 @@ blocks of `y` in it meets the second condition, and a string with no blocks of
 <MachineBuilder client:visible language="deep-end/one-rule-each-letter" />
 </Problem>
 
-<Problem n={5} title="Two patterns, equally often">
+<Problem n={5} title="Two patterns, equally often" optional>
 Count how many times `01` appears in the string, counting a fresh appearance
 at every position where it fits. Count `10` the same way.
 
