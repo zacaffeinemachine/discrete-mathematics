@@ -8,7 +8,7 @@ const B = ["0", "1"];
 
 export const L: Record<string, Language> = {
   // ---- last-few-symbols ----
-  "last-few-symbols/ends-01":          { alphabet: B, accepts: (s) => s.endsWith("01") },
+  "last-few-symbols/ends-10":          { alphabet: B, accepts: (s) => s.endsWith("10") },
   "last-few-symbols/ends-110":         { alphabet: B, accepts: (s) => s.endsWith("110") },
   // the second symbol from the end is 1
   "last-few-symbols/second-from-end":  { alphabet: B, accepts: (s) => s.length >= 2 && s[s.length - 2] === "1" },

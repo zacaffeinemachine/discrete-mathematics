@@ -14,9 +14,9 @@ In every problem on this page your machine may be nondeterministic. A state may
 have several arrows for the same symbol, or none.
 
 <Problem n={1} title="Two at the end">
-Design a nondeterministic machine that accepts exactly the strings that end in `01`.
-<Tests accept={["01", "001", "101", "1101", "0001"]} reject={["", "0", "1", "10", "011", "0110"]} />
-<MachineBuilder client:visible nondeterministic language="last-few-symbols/ends-01" />
+Design a nondeterministic machine that accepts exactly the strings that end in `10`.
+<Tests accept={["10", "010", "110", "0010", "1110"]} reject={["", "0", "1", "01", "100", "1001"]} />
+<MachineBuilder client:visible nondeterministic language="last-few-symbols/ends-10" />
 </Problem>
 
 <Problem n={2} title="Three at the end">
