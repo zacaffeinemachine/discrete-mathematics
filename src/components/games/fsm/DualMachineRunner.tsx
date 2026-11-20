@@ -195,7 +195,7 @@ export default function DualMachineRunner({
             color: "var(--muted)",
           }}
         >
-          <span>arrows are coloured by the symbol they read:</span>
+          <span>arrows are colored by the symbol they read:</span>
           {machineA.alphabet.map((sym) => (
             <span key={sym} style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
               <svg width={22} height={8} aria-hidden="true">

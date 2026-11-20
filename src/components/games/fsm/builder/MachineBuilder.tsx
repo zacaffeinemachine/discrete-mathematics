@@ -836,8 +836,10 @@ export default function MachineBuilder(props: MachineBuilderProps) {
       )}
 
       {/* The canvas, and beside it (below it on a narrow screen) the tree of runs. */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "flex-start" }}>
-      <div ref={boxRef} style={{ flex: "3 1 360px", minWidth: 0 }}>
+      {/* The runs panel sits under the canvas, full width (author, 20 Nov 2026): beside
+          the canvas it squeezed both the machine and the tree. */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div ref={boxRef} style={{ minWidth: 0 }}>
       <div ref={wrapRef} style={{ position: "relative" }}>
         <svg
           ref={svgRef}
@@ -1081,10 +1083,10 @@ export default function MachineBuilder(props: MachineBuilderProps) {
       </div>
       {tree && (
         <aside role="region" aria-label={MSG.runsLabel} data-runs-panel=""
-          style={{ flex: "1 1 220px", minWidth: 0, border: "1px solid var(--rule)", borderRadius: 6, background: "var(--surface)", padding: "8px 10px" }}>
+          style={{ minWidth: 0, border: "1px solid var(--rule)", borderRadius: 6, background: "var(--surface)", padding: "8px 10px" }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: INK, marginBottom: 4, overflowWrap: "anywhere" }}>{MSG.runsTitle(word)}</div>
           {design.start ? (
-            <div style={{ overflow: "auto", maxHeight: 560 }}>
+            <div style={{ overflow: "auto", maxHeight: 480 }}>
               <RunTreeView tree={tree} word={word} pos={pos} name={nameOf} accepting={(sid) => !!stateById.get(sid)?.accepting} />
             </div>
           ) : (

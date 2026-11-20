@@ -283,8 +283,9 @@ With none of them set it behaves exactly as before.
   set becomes the union of the targets. A set that empties stops the run ("every way of
   reading this string has got stuck"). Under the tape a line lists the set after each
   prefix read so far (`ε → {p0}`, `0 → {p0}`, `01 → {p0, p1}`), which is raw state.
-- **Show runs** (nondeterministic mode only) opens a panel beside the canvas, or below it
-  at phone width, drawing the tree of every attempt on the string on the tape, as the
+- **Show runs** (nondeterministic mode only) opens a panel directly under the canvas, at
+  full width (it sat beside the canvas at first, which left too little room for both),
+  drawing the tree of every attempt on the string on the tape, as the
   notes' figure `figure:nfa-run-trees` does: the start at the top, one row per symbol with
   the symbol in a gray *reads* gutter, children in state creation order, equal states
   never merged, and a gray *stuck* under an attempt with no arrow for the next symbol.
