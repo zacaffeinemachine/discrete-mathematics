@@ -231,6 +231,10 @@ and swallowed clicks on them, which read as "none of the buttons work".
 
 ## The Automata chapter (ported Nov 2026)
 
+Shown as **DFA** (its card, hub and breadcrumbs, since 20 Nov 2026), with the slug left
+at `automata` so that links already shared keep working. The Nondeterminism chapter is
+shown as **NFA** in the same way, slug `nondeterminism`.
+
 `src/pages/automata/` is pages 2 to 11 of the MathematicalThinking site's **Machines**
 chapter, copied in November 2026: the design-problem pages with a machine builder under
 every problem, and *Do These Agree?*. Its page 1 (what a machine is) and page 12 (*Beyond
